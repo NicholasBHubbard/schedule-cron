@@ -29,7 +29,7 @@ sub dispatch_1 {
 sub dispatch_2 {
    print "# Job 1.2, job1count: $job1count, job2count: $job2count\n";
    if ($job2count++) {
-      die "job1 got lost -- job2 ran again before job1";
+      die "job1 got lost -- job2 ran again before job1 a second time";
    }
 }
 

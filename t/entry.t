@@ -1,3 +1,4 @@
+#!/usr/bin/perl
 #
 # Test management methods for adding/deleting/updating entries
 use Test::More tests => 19;
