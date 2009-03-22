@@ -136,10 +136,10 @@ execution date  (relative to  the reference time).   The dates  can be
 specified in  a format understood by  'parsedate' from Time::ParseDate
 (like 'now  + 5  days').  Please include  the output of  this command.
 
-COPYRIGHT
----------
+LICENSE
+-------
 
-Copyright 1999-2006 Roland Huss.
+Copyright 1999-2009 Roland Huss.
 
 This library is  free software; you can redistribute  it and/or modify
 it under the same terms as Perl itself.

@@ -1,3 +1,12 @@
+0.98
+
+- New option 'after_job' for new() which allows for a callback run after a 
+  job has been sucessfully run (RT #29040)
+- Argument logging is done using data dumper (RT #39499)
+- Private methods are now marked with _
+- Added tests for increasin kwallitee
+- Switched to Build.PL (Makefile.PL is still supported)
+
 0.97
 
 - Use POSIX only where available, otherwise fallback to an emulation of waipid.
@@ -11,7 +20,6 @@
 
 - Applied patch for #4917 in order to be smarter to existing SIGCHLD handler and to 
   reap only own childs.
-
 
 0.95 
 

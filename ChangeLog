@@ -1,3 +1,15 @@
+2009-03-21  Roland Huss  <roland@consol.de>
+
+	* Cron.pm (_time_as_string): marked all private subs to start with '_'
+
+2009-03-20  Roland Huss  <roland@consol.de>
+
+	* t/pretty_print_args.t: Arguments are logged using Data::Dumper
+	in a terse format
+
+	* t/after_job.t: Added new option 'after_job' and test for it
+	which allows for a single callback after any job has been run.
+
 2006-11-27  Roland Huss  <roland@consol.de>
 
 	* Cron.pm (REAPER): Added support for plattforms where POSIX is

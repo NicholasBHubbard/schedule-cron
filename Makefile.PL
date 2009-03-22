@@ -1,12 +1,15 @@
 use ExtUtils::MakeMaker;
 WriteMakefile
   (
+   NO_META => 1,
    NAME => "Schedule::Cron",
-   VERSION_FROM => "Cron.pm",
+   VERSION_FROM => "lib/Schedule/Cron.pm",
    ($] >= 5.005
-      ? (ABSTRACT   => 'cron-like scheduler',
-         AUTHOR     => 'Roland Huss (roland@consol.de)')
-      : ()),
-   PREREQ_PM => { "Time::ParseDate" => '99.00'},
+    ? (ABSTRACT   => 'Cron-like scheduler for Perl subroutines',
+         AUTHOR     => 'Roland Huss (roland@cpan.org)')
+    : ()),
+   ($ExtUtils::MakeMaker::VERSION >= 6.3002 ?
+    ('LICENSE'		=> 'perl', ) : ()),
+   PREREQ_PM => { "Time::ParseDate" => '99.00',"Data::Dumper" => 0},
    'dist' => {COMPRESS=>'gzip',SUFFIX=>'gz'}
   );

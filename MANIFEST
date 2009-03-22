@@ -1,15 +1,21 @@
 ChangeLog
 CHANGES
-Cron.pm
+lib/Schedule/Cron.pm
 Makefile.PL
+Build.PL
 MANIFEST			This list of files
 META.yml
 README
+t/after_job.t
 t/callbackreschedule.t
 t/entry.t
 t/execution_time.t
+t/kwalitee.t
 t/load_crontab.t
 t/nofork.t
+t/pod.t
+t/pod_coverage.t
+t/pretty_print_args.t
 t/sighandler.t
 t/startup.t
 t/test.crontab

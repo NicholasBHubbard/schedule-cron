@@ -1,11 +1,31 @@
-# http://module-build.sourceforge.net/META-spec.html
-#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
-name:         Schedule-Cron
-version:      0.97
-version_from: Cron.pm
-installdirs:  site
+---
+name: Schedule-Cron
+version: 0.98_01
+author:
+  - Roland Huss (roland@cpan.org)
+abstract: cron-like scheduler for Perl subroutines
+license: perl
+resources:
+  license: http://dev.perl.org/licenses/
 requires:
-    Time::ParseDate:               99.00
-
-distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.30
+  Data::Dumper: 0
+  Time::ParseDate: 99.00
+build_requires:
+  Test: 0
+  Test::More: 0
+recommends:
+  Module::Build: 0
+  ioctl.ph: 0
+  sys::ioctl.ph: 0
+provides:
+  Schedule::Cron:
+    file: lib/Schedule/Cron.pm
+    version: 0.98_01
+generated_by: Module::Build version 0.31012
+keywords:
+    - Cron
+    - Scheduler
+    - Job
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.2.html
+  version: 1.2
