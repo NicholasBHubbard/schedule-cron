@@ -1,3 +1,10 @@
+2009-03-23  Roland Huss  <roland@consol.de>
+
+	* lib/Schedule/Cron.pm (_calc_time): fixed some issues when
+	calculating times for '*' entries
+
+	* t/execution_time.t: Added test for checking proper DST behaviour
+
 2009-03-21  Roland Huss  <roland@consol.de>
 
 	* Cron.pm (_time_as_string): marked all private subs to start with '_'

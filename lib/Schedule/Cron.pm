@@ -680,12 +680,12 @@ are recognized:
 
 =over
 
-=item   detach    
+=item detach    
 
 If set to a true value the scheduler process is detached from the current
 process (UNIX only).
 
-=item  pid_file  
+=item pid_file  
 
 If running in daemon mode, name the optional file, in which the process id of
 the scheduler process should be written. By default, no PID File will be
@@ -1135,7 +1135,7 @@ sub _update_queue
 
 # The heart of the module.
 # calulate the next concrete date
-# for execution from a cronta entry
+# for execution from a crontab entry
 sub _calc_time 
 { 
     my $self = shift;
@@ -1152,14 +1152,16 @@ sub _calc_time
     # $now_... : the current date, fixed at call time
     # $dest_...: date used for backtracking. At the end, it contains
     #            the desired lowest matching date
-    
+
     my ($dest_mon,$dest_mday,$dest_wday,$dest_hour,$dest_min,$dest_sec,$dest_year) = 
       ($now_mon,$now_mday,$now_wday,$now_hour,$now_min,$now_sec,$now_year);
-    
+
+    dbg Dumper($expanded);
+
+    # Airbag...
     while ($dest_year <= $now_year + 1) 
-    { # Airbag...
+    { 
         dbg "Parsing $dest_hour:$dest_min:$dest_sec $dest_year/$dest_mon/$dest_mday";
-        
         
         # Check month:
         if ($expanded->[3]->[0] ne '*') 
@@ -1215,7 +1217,7 @@ sub _calc_time
             $mon++;
             $year += 1900;
             
-            dbg "$mday/$mon/$year";
+            dbg "Calculated $mday/$mon/$year for weekday ",$WDAYS[$dest_wday];
             if ($mon != $dest_mon || $year != $dest_year) {
                 dbg "backtracking";
                 $dest_mon = $mon;
@@ -1235,17 +1237,18 @@ sub _calc_time
                 $dest_mday = ($dest_mon == $now_mon ? $dest_mday : 1);
             }
         }
+
   
         # Check for hour
         if ($expanded->[1]->[0] ne '*') 
         {
-            if ($dest_mday != $now_mday) 
+            if ($dest_mday != $now_mday || $dest_mon != $now_mon || $dest_year != $now_year) 
             {
                 $dest_hour = $expanded->[1]->[0];
             } 
             else 
             {
-#       dbg "Checking for next hour $dest_hour";
+                #dbg "Checking for next hour $dest_hour";
                 unless (defined ($dest_hour = $self->_get_nearest($dest_hour,$expanded->[1]))) 
                 {
                     # Hour to match is at the next day ==> redo it
@@ -1268,7 +1271,7 @@ sub _calc_time
         # Check for minute
         if ($expanded->[0]->[0] ne '*') 
         {
-            if ($dest_hour != $now_hour) 
+            if ($dest_hour != $now_hour || $dest_mday != $now_mday || $dest_mon != $dest_mon || $dest_year != $now_year) 
             {
                 $dest_min = $expanded->[0]->[0];
             } 
@@ -1290,7 +1293,11 @@ sub _calc_time
         } 
         else 
         {
-            $dest_min = ($dest_hour == $now_hour ? $dest_min : 0);
+            if ($dest_hour != $now_hour ||
+                $dest_mday != $now_mday ||
+                $dest_year != $now_year) {
+                $dest_min = 0;
+            } 
         }
 
         # Check for seconds
@@ -1328,15 +1335,30 @@ sub _calc_time
         {
             $dest_sec = 0;
         }
-
         
         # We did it !!
         my $date = sprintf("%2.2d:%2.2d:%2.2d %4.4d/%2.2d/%2.2d",
                            $dest_hour,$dest_min,$dest_sec,$dest_year,$dest_mon,$dest_mday);
-        dbg "Next execution time: $date ",
-          $WDAYS[$dest_wday];
-        return parsedate($date);
-    }
+        dbg "Next execution time: $date ",$WDAYS[$dest_wday];
+        my $result = parsedate($date, VALIDATE => 1);
+        # Check for a valid date
+        if ($result)
+        {
+            # Valid date... return it!
+            return $result;
+        }
+        else
+        {
+            # Invalid date i.e. (02/30/2008). Retry it with another, possibly
+            # valid date            
+            my $t = parsedate($date); print scalar(localtime($t)),"\n";
+            ($dest_hour,$dest_mday,$dest_mon,$dest_year,$dest_wday) =
+              (localtime(parsedate(" + 1 second",NOW=>$t)))  [2,3,4,5,6];
+            $dest_mon++;
+            $dest_year += 1900;
+            next;
+        }
+   }
 }
 
 # get next entry in list or 

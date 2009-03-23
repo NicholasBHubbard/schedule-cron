@@ -1,18 +1,37 @@
 #!perl -w
 
+
 use Test::More;
 use Schedule::Cron;
 use Time::ParseDate;
+use Data::Dumper;
 
+eval "use DateTime::TimeZone::Local";
+my $local_tz;
+if (!$@) {
+    my $t = DateTime::TimeZone::Local->TimeZone();
+    if ($t) {
+        $local_tz = $t->name();
+    }
+}
 my $time;
-
-while (defined($_=<DATA>) && $_ !~ /end/i) {
+my $skip = 0;
+while (defined($_=<DATA>) && $_ !~ /^end/i) {
   chomp;
+  next if $skip;
   if (/^Reftime:\s*(.*)$/) {
-    $time = $1;
-    $time =~ s/\#.*$//;
-    $time = parsedate($time,UK=>1);
-    next;
+      $time = $1;
+      $time =~ s/\#.*$//;
+      $time = parsedate($time,UK=>1);
+      next;
+  } elsif (/^TZBEGIN:\s*(.*)$/) {
+      if (!$local_tz || $1 ne $local_tz) {
+          $skip = 1; 
+      }
+      next;
+  } elsif (/^TZEND:/) {
+      $skip = 0;
+      next;
   }
   s/^\s*(.*)\s*/$1/;
   next if /^\#/ || /^$/;
@@ -132,6 +151,45 @@ Reftime: Mon Dec 27 20:14:14 1999
         5,10,25,30,35,40,45,50,55 *   *  * 	*         20:25 27/12/1999 Monday
 	    5,10,25,30,35,40,45,50,55 * * * *             20:25 27/12/1999 Monday
         */5                       *   *  * 	*         20:15 27/12/1999 Monday
+
+# Runs only if running if in Germany (since the DST is TZ specific)
+TZBEGIN: Europe/Berlin
+# DST Checks (for MEZ)
+# ====================
+# Normal behaviour (non-DST related)
+Reftime: Sun Mar 29 03:10:00 2009
+       10 * * * *                                     Sun Mar 29 04:10:00 2009
+       10 2 * * *                                     Mon Mar 30 02:10:00 2009 
+       10 2 * * 0                                     Sun Apr 05 02:10:00 2009
+       10 2 29 * *                                    Wed Apr 29 02:10:00 2009
+# Cron triggers within the DST switch. It should fire right after the hours has 
+# changed
+Reftime: Sun Mar 29 01:10:00 2009
+       10 * * * *                                     Sun Mar 29 03:10:00 2009
+Reftime: Sat Mar 28 02:10:00 2009
+       10 2 * * *                                     Sun Mar 29 03:10:00 2009
+Reftime: Sun Mar 22 02:10:00 2009
+       10 2 * * 0                                     Sun Mar 29 03:10:00 2009
+Reftime: Sun Feb 29 02:10:00 2009
+       10 2 29 * *                                    Sun Mar 29 03:10:00 2009
+TZEND: Europe/Berlin
+
+# ----------------------------------------------------------------------------
+# Leave out invalid dates
+Reftime: Fri Feb 27 12:00:00 2009
+       0 12 30 * *                                     Sun Mar 30 12:00:00 2009                     
+
+# Check '*' at minute level
+Reftime: Fri Jan 27 12:01:00 2009
+       * 12 30 * *                                     Sun Jan 30 12:00:00 2009 
+       * 12 27 * *                                     Sun Jan 27 12:02:00 2009 
+       * 12 *  * *                                     Sun Jan 27 12:02:00 2009 
+       * 13 *  * *                                     Sun Jan 27 13:00:00 2009 
+
+# -----------------------------------------------------------------------------
+# Reported by : tenbrink
+Reftime: 23:00 2007/09/01
+       0 23 * * 1                                      23:00 03/09/2007 Monday
 
 end
 

@@ -3,9 +3,10 @@
 - New option 'after_job' for new() which allows for a callback run after a 
   job has been sucessfully run (RT #29040)
 - Argument logging is done using data dumper (RT #39499)
-- Private methods are now marked with _
+- Private methods are now marked with '_'
 - Added tests for increasin kwallitee
-- Switched to Build.PL (Makefile.PL is still supported)
+- Switched over to Build.PL (Makefile.PL is still supported)
+- Fixed some time calculation times
 
 0.97
 
