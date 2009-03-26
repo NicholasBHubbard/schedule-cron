@@ -7,6 +7,7 @@
 - Added tests for increasin kwallitee
 - Switched over to Build.PL (Makefile.PL is still supported)
 - Fixed some time calculation times
+- Allow comments at the end of a crontab line
 
 0.97
 

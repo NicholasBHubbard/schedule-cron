@@ -81,7 +81,7 @@ BEGIN {
 }
 
 
-$VERSION = "0.97_01";
+$VERSION = "0.97_02";
 
 our $DEBUG = 0;
 my %STARTEDCHILD = ();
@@ -328,6 +328,10 @@ sub load_crontab
   while (<F>) 
   {
       $line++;
+      # Strip off trailing comments and ignore empty 
+      # or pure comments lines:
+      s/#.*$//;
+      next if /^$/;
       next if /^$/;
       next if /^\s*#/;
       chomp;
@@ -749,14 +753,16 @@ sub run
                       if $log;
                     $self->_update_queue($index);
                     next;
-                }
+                }  
             }
             else
             {
                 $sleep = $time - $now;
             }
             $0 = $self->_get_process_prefix()." MainLoop - next: ".scalar(localtime($time));
-            die "No time found\n" unless $time;
+            if (!$time) {
+                die "Internal: No time found, self: ",$self->{queue},"\n" unless $time;
+            }
 
             dbg "R: sleep = $sleep | ",scalar(localtime($time))," (",scalar(localtime($now)),")";
             while ($sleep > 0) 
@@ -977,9 +983,12 @@ sub get_next_execution_time
               push @res,$t;
           }
       }
-      push @expanded, ($#res == 0 && $res[0] eq '*') ? [@res] : [ sort { $a <=> $b} @res];
+      push @expanded, ($#res == 0 && $res[0] eq '*') ? [ "*" ] : [ sort {$a <=> $b} @res];
   }
   
+  # Check for strange bug
+  $self->_verify_expanded_cron_entry($cron_entry,\@expanded);
+
   # Calculating time:
   # =================
   my $now = $time || time;
@@ -1156,7 +1165,7 @@ sub _calc_time
     my ($dest_mon,$dest_mday,$dest_wday,$dest_hour,$dest_min,$dest_sec,$dest_year) = 
       ($now_mon,$now_mday,$now_wday,$now_hour,$now_min,$now_sec,$now_year);
 
-    dbg Dumper($expanded);
+    # dbg Dumper($expanded);
 
     # Airbag...
     while ($dest_year <= $now_year + 1) 
@@ -1358,7 +1367,14 @@ sub _calc_time
             $dest_year += 1900;
             next;
         }
-   }
+    }
+
+    # Die with an error because we couldnt find a next execution entry
+    my $dumper = new Data::Dumper($expanded);
+    $dumper->Terse(1);
+    $dumper->Indent(0);
+
+    die "No suitable next execution time found for ",$dumper->Dump(),", now == ",scalar(localtime($now)),"\n";
 }
 
 # get next entry in list or 
@@ -1592,6 +1608,26 @@ sub _time_as_string
   $wday = $WDAYS[$wday];
   return sprintf("%2.2d:%2.2d %2.2d/%2.2d/%4.4d %s",
                  $hour,$min,$mday,$month,$year,$wday);
+}
+
+
+# As reported by RT Ticket #24712 sometimes, 
+# the expanded version of the cron entry is flaky.
+# However, this occurs only very rarely and randomly. 
+# So, we need to provide good diagnostics when this 
+# happens
+sub _verify_expanded_cron_entry {
+    my $self = shift;
+    my $original = shift;
+    my $entry = shift;
+    die "Internal: Not an array ref. Orig: ",Dumper($original), ", expanded: ",Dumper($entry)," (self = ",Dumper($self),")"
+      unless ref($entry) eq "ARRAY";
+    
+    for my $i (0 .. $#{$entry}) {
+        die "Internal: Part $i of entry is not an array ref. Original: ",
+          Dumper($original),", expanded: ",Dumper($entry)," (self=",Dumper($self),")",
+            unless ref($entry->[$i]) eq "ARRAY";
+    }    
 }
 
 =back

@@ -9,10 +9,12 @@ use Data::Dumper;
 eval "use DateTime::TimeZone::Local";
 my $local_tz;
 if (!$@) {
-    my $t = DateTime::TimeZone::Local->TimeZone();
-    if ($t) {
-        $local_tz = $t->name();
-    }
+    eval {
+        my $t = DateTime::TimeZone::Local->TimeZone();
+        if ($t) {
+            $local_tz = $t->name();
+        }
+    }; # Needs to eval because a time zone might not be set
 }
 my $time;
 my $skip = 0;
