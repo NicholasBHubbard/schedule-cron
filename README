@@ -77,34 +77,44 @@ In order  to install and use  this package you will  need Perl version
 (contained in the Time-modules-xx.xxxxx) available on CPAN.
 
 You need a fork()-aware Perl for dispatching the cron jobs. This might
-change in the future. On systems without a fork() system call you can
+change in the future. On systems  without a fork() system call you can
 use the 'nofork' option to run your jobs within the current process.
 
 OS-DEPENDENCIES
 ---------------
 
 Schedule::Cron was tested on a Redhat Linux-Box, but it should work on
-any UNIX  Box (still  to be  tested). In depends  on some  UNIX system
-calls for starting jobs and detaching itself to the background:
+any UNIX Box.  In depends on some original UNIX system calls for
+starting jobs and detaching itself to the background:
 
   * It uses fork() for starting jobs
   * For  detaching it  uses either  setsid (POSIX)  or the  ioctl call
     TIOCNOTTY
 
-So at  the moment, it probably  won't run on any  'foreign' ports like
-the Win32- or MacOs-Port.
+The roadmap  include plans  for porting the  fork mechanism over  to a
+thread based scheme, which should make dynamic update much easier.
 
-These restrictions might be relaxed in the future.
+If the  system calls mentioned  above are not available  (which should
+hapen nowadays only  under rare circumstances), you can  still use the
+'nofork' option to run all jobs within a single process/thread. Please
+refer to the documentation for further reading.
 
 INSTALLATION
 ------------
 
-As usual:
+Installation can be don either in the old fashioned way
 
    perl Makefile.PL
    make
    make test
    make install
+
+or alternatively with Module::Build
+
+   perl Build.PL
+   ./Build 
+   ./Build test
+   ./Build install
 
 See the  documentation for  Schedule::Cron for a  detailed description
 and further usage examples.
@@ -145,5 +155,5 @@ This library is  free software; you can redistribute  it and/or modify
 it under the same terms as Perl itself.
 
 Enjoy it...
-							    ...roland (roland@cpan.org)
+                                            ...roland (roland@cpan.org)
 

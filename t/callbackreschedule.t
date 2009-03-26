@@ -38,4 +38,4 @@ eval
 {
     $cron->run();
 };
-ok($@ eq "ok\n","rescheduled jobs work properly");
+ok($@ eq "ok\n","rescheduled jobs work properly ($@)");
