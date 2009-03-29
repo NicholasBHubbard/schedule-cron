@@ -6,6 +6,7 @@ Build.PL
 MANIFEST			This list of files
 META.yml
 README
+examples/simple.pl
 t/after_job.t
 t/callbackreschedule.t
 t/entry.t
