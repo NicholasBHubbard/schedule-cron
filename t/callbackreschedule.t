@@ -18,8 +18,8 @@ sub dispatch_1 {
    print "# Job 1.1, job1count: $job1count, job2count: $job2count\n";
    if ($job1count++ == 0) {
       $cron->clean_timetable;
-      $cron->add_entry("* * * * * 0-59/2", \&dispatch_2);
-      $cron->add_entry("* * * * * 1-59/2");
+      $cron->add_entry("* * * * * 0-59/4", \&dispatch_2);
+      $cron->add_entry("* * * * * 2-59/4");
    } else {
       die "ok\n" if $job2count;
       die "job2 never ran";
@@ -33,9 +33,11 @@ sub dispatch_2 {
    }
 }
 
-$cron->add_entry("* * * * * 1-59/2");
+$cron->add_entry("* * * * * 2-59/4");
 eval
 {
     $cron->run();
 };
-ok($@ eq "ok\n","rescheduled jobs work properly ($@)");
+my $error = $@;
+chomp $error;
+ok($error eq "ok","rescheduled jobs work properly ($error)");
