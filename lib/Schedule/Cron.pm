@@ -383,7 +383,7 @@ The time and date fields are (taken mostly from L<crontab(5)>, "Vixie" cron):
    hour           0-23
    day of month   1-31 
    month          1-12 (or as names)
-   day of week    0-7 (0 or 7 is Sunday, or as names )
+   day of week    0-7 (0 or 7 is Sunday, or as names)
    seconds        0-59 (optional)
 
  A field may be an asterisk (*), which always stands for
@@ -1080,7 +1080,7 @@ sub _execute
 
 
   my $args_label = @args ? "with (".join(",",$self->_format_args(@args)).")" : "";
-  $0 = $self->_get_process_prefix()." Dispatch $args_label"
+  $0 = $self->_get_process_prefix()." Dispatched with $args_label"
     unless $cfg->{nofork};
   $log->(0,"Schedule::Cron - Starting job $index $args_label")
     if $log;
