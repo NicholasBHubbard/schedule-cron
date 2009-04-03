@@ -14,7 +14,7 @@ use Schedule::Cron;
 my $cron = new Schedule::Cron(\&dispatcher);
 
 # The cron entry which fires every 10 minutes
-my $entry = "0-59/10 * * * *";
+my $entry = "0-59/5 * * * *";
 
 # Dispatcher subroutine called from cron
 sub dispatcher { 
@@ -22,6 +22,7 @@ sub dispatcher {
     print T "Current: ",scalar(localtime),"\n";
     print T "Next:    ",scalar(localtime($cron->get_next_execution_time($entry))),"\n";
     close T;
+    sleep(30);
 }
 
 
