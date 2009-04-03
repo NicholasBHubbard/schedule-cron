@@ -10,24 +10,23 @@ $| = 1;
 
 SKIP: {
     eval { alarm 0 };
-    if ($@) {
-        skip "alarm() not available", 1 if $@;
-    } else {
-        # Check, whether an already installed signalhandler is called
-        $SIG{CHLD} = sub { 
-            pass;
+    skip "alarm() not available", 1 if $@;
+    
+    # Check, whether an already installed signalhandler is called
+    $SIG{CHLD} = sub { 
+        pass;
+        exit 0;
+    };
+    
+    $SIG{ALRM} = sub { 
+        fail;
             exit 0;
-        };
-        
-        $SIG{ALRM} = sub { 
-            fail;
-            exit 0;
-        };
-        
-        
-        my $cron = new Schedule::Cron(sub { sleep(1); });
-        $cron->add_entry("* * * * * *");
-        alarm(5);
-        $cron->run;
-    }
+    };
+    
+    
+    my $cron = new Schedule::Cron(sub { sleep(1); });
+    $cron->add_entry("* * * * * *");
+    alarm(5);
+    $cron->run;
 }
+

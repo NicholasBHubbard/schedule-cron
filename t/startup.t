@@ -13,26 +13,23 @@ $| = 1;
 
 SKIP: {
     eval { alarm 0 };
-    if ($@) {
-        skip "alarm() not available", 1 if $@;
-    } else {
-        $SIG{QUIT} = sub { 
-            alarm(0);
-            pass;
-            exit;
-        };
-        
-        $SIG{ALRM} = sub { 
-            fail;
-            exit;
-        };
-        
-        $cron = new Schedule::Cron(sub { kill QUIT, shift; alarm 1; });
-        $cron->add_entry("* * * * * */2",$$);
-        
-        alarm(6);
-        $cron->run;
-    }
+    skip "alarm() not available", 1 if $@;
+    $SIG{QUIT} = sub { 
+        alarm(0);
+        pass;
+        exit;
+    };
+    
+    $SIG{ALRM} = sub { 
+        fail;
+        exit;
+    };
+    
+    $cron = new Schedule::Cron(sub { kill QUIT, shift; alarm 1; });
+    $cron->add_entry("* * * * * */2",$$);
+    
+    alarm(6);
+    $cron->run;
 }
 
 

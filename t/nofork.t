@@ -19,7 +19,7 @@ my $dispatch_2 =
       print "# Job 1.2\n";
       if ($toggle)
       {
-          pass("Second Job finished");
+          pass("Simple nofork - Second Job finished");
           die "ok\n";
       }
       $count++;
@@ -34,7 +34,9 @@ eval
 {
     $cron->run();
 };
-ok($@ eq "ok\n","Cron has been run: $@");
+my $error = $@;
+chomp $error;
+ok($error eq "ok","Simple nofork - Cron has been run: $error");
 
 # No fork with 'skip' option
 $count = 0;
@@ -43,7 +45,7 @@ $dispatch_1 =
       print "# Job 2.1  ",scalar(localtime),"\n";
       if ($count == 1)
       {
-          pass("Skip test passed");
+          pass("Nofork with skip - Skip test passed");
           die "ok\n";
       }
       $count++;
@@ -63,7 +65,9 @@ eval
 {
     $cron->run(skip => 1);
 };
-ok($@ eq "ok\n","Cron has been run: $@");
+$error = $@;
+chomp $error;
+ok($error eq "ok","Nofork with skip - Cron has been run: $error");
 
 # No-Fork with 'catch' option.
 $count = 0;
@@ -79,7 +83,7 @@ SKIP: {
       };
     
     $SIG{ALRM} = sub { 
-        ok($count > 0,"Job has run");
+        ok($count > 0,"Nofork with skip - Job has run");
         exit;
     };
     
@@ -90,7 +94,7 @@ SKIP: {
         alarm(3);
         $cron->run(catch => 1);
     };
-    ok(!$@,"Job has died: $@");
+    ok(!$@,"Nofork with skip - Job has died: $@");
  }
 
 
