@@ -1,3 +1,7 @@
+2009-04-03  Roland Huss  <roland@consol.de>
+
+	* Released Version 0.98
+
 2009-03-24  Roland Huss  <roland@consol.de>
 
 	* lib/Schedule/Cron.pm (load_crontab): Allow comment at the end of 

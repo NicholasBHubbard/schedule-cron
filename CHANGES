@@ -1,40 +1,38 @@
 0.98
 
-- New option 'after_job' for new() which allows for a callback run after a 
-  job has been sucessfully run (RT #29040)
+- New option 'after_job' for new() which allows for a callback run
+  after a job has been sucessfully run (RT #29040)
 - Argument logging is done using data dumper (RT #39499)
 - Private methods are now marked with '_'
-- Added tests for increasin kwallitee
+- Added tests for increased kwallitee
 - Switched over to Build.PL (Makefile.PL is still supported)
-- Fixed some time calculation times
+- Fixed some time calculation times (e.g. for the first DST switch in
+  the year)  
 - Allow comments at the end of a crontab line
 
 0.97
 
-- Use POSIX only where available, otherwise fallback to an emulation of waipid.
-- Fixed bug when previous SIGCHLD handler was not a coderef, but a String value like 
-  "DEFAULT" or "IGNORE"
+- Use POSIX only where available, otherwise fallback to an emulation
+  of waipid. 
+- Fixed bug when previous SIGCHLD handler was not a coderef, but a
+  String value like "DEFAULT" or "IGNORE"
 - Added tests
-- Made test more robust so they work now also on system without alarm() functionality 
-  (Win32)
+- Made test more robust so they work now also on system without
+  alarm() functionality (Win32)
 
 0.96 
 
-- Applied patch for #4917 in order to be smarter to existing SIGCHLD handler and to 
-  reap only own childs.
+- Applied patch for #4917 in order to be smarter to existing SIGCHLD
+  handler and to reap only own childs.
 
 0.95 
 
 - If a scheduled method in 'nofork' manipulates the execution queue with 
   add_entry or delete_entry, it will be picked up during the next run. 
-
 - Clarified different behaviour of global variables within the fork/norfork 
   mode in the documentation
-
 - Fixed warning about non-numeric arguments when sorting. 
-
 - Fixed bug which called to an undefined methods in a die-message
-
 - Pretty print a hashref in $0 if provided as argument and the 
   prefix for the name to be shown in the process list can be configured
   with the option "processprefix"
