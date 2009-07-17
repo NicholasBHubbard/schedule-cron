@@ -24,7 +24,7 @@ my $build = Module::Build->new
                   "sys::ioctl.ph" => 0,
                   "Module::Build" => 0
                  },
-   keywords => [  "Cron", "Scheduler", "Jon" ],
+   keywords => [  "Cron", "Scheduler", "Job" ],
    provides => {
                 "Schedule::Cron" => {
                                file =>  "lib/Schedule/Cron.pm"
