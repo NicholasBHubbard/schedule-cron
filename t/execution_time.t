@@ -174,6 +174,15 @@ Reftime: Sun Mar 22 02:10:00 2009
        10 2 * * 0                                     Sun Mar 29 03:10:00 2009
 Reftime: Sun Feb 29 02:10:00 2009
        10 2 29 * *                                    Sun Mar 29 03:10:00 2009
+
+# Checks for reverse DST switch. It should skip the extra hour.
+Reftime: Sun Oct 25 02:10:00 2009
+       10  * * * *                                    Sun Oct 25 03:10:00 2009
+Reftime: Sun Oct 25 02:10:00 2009
+       5  * * * *                                     Sun Oct 25 03:05:00 2009
+Reftime: Sun Oct 25 02:55:00 2009
+       25  * * * *                                    Sun Oct 25 03:25:00 2009
+
 TZEND: Europe/Berlin
 
 # ----------------------------------------------------------------------------
@@ -192,6 +201,8 @@ Reftime: Fri Jan 27 12:01:00 2009
 # Reported by : tenbrink
 Reftime: 23:00 2007/09/01
        0 23 * * 1                                      23:00 03/09/2007 Monday
+
+
 
 end
 
