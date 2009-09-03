@@ -81,7 +81,7 @@ BEGIN {
 }
 
 
-$VERSION = "0.98";
+$VERSION = "0.99_1";
 
 our $DEBUG = 0;
 my %STARTEDCHILD = ();
@@ -742,7 +742,7 @@ sub run
     {
         while (42) 
         {
-            my ($index,$time) = @{shift @{$self->{queue}}};
+            my ($index,$time,$dst_back) = @{shift @{$self->{queue}}};
             my $now = time;
             my $sleep = 0;
             if ($time < $now)
@@ -753,7 +753,18 @@ sub run
                       if $log;
                     $self->_update_queue($index);
                     next;
-                }  
+                }
+                if ($dst_back) {
+                    # We are adding hours as long as we have a negative sleep
+                    # interval: 
+                    $sleep = $time - $now;
+                    do { 
+                        $sleep += 3600;
+                    } while ($sleep < 0);
+                    dbg "Adjusted sleep to $sleep because of DST back flip (time - now = ",$time - $now,")";
+                }
+                # At least a safety airbag
+                $sleep = 1 unless $sleep;
             }
             else
             {
@@ -1136,8 +1147,11 @@ sub _update_queue
     my $entry = $self->get_entry($index);
     
     my $new_time = $self->get_next_execution_time($entry->{time});
+    # Check, whether next execution time is *smaller* than the current time.
+    # This can happen during DST backflip:
+    my $dst_back = $new_time < time ? 1 : 0;
     dbg "Updating Queue: ",scalar(localtime($new_time));
-    $self->{queue} = [ sort { $a->[1] <=> $b->[1] } @{$self->{queue}},[$index,$new_time] ];
+    $self->{queue} = [ sort { $a->[1] <=> $b->[1] } @{$self->{queue}},[$index,$new_time,$dst_back] ];
     #  dbg "Queue now: ",Dumper($self->{queue});
 }
 
