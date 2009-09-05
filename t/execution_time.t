@@ -175,7 +175,12 @@ Reftime: Sun Mar 22 02:10:00 2009
 Reftime: Sun Feb 29 02:10:00 2009
        10 2 29 * *                                    Sun Mar 29 03:10:00 2009
 
-# Checks for reverse DST switch. It should skip the extra hour.
+# Checks for reverse DST switch. It should skip the extra hour.  This works for
+# MET only, though. Actually for other TZs (like PST8PDT), where parsedate()
+# delivers the 'first' UTC time instead of the 'second' (as it is for MET).
+# This is not Time::ParseDate's fault but ours because of the way, how we
+# calculate the next execution time. It's unlikely that this will get fixed
+# very soon.
 Reftime: Sun Oct 25 02:10:00 2009
        10  * * * *                                    Sun Oct 25 03:10:00 2009
 Reftime: Sun Oct 25 02:10:00 2009

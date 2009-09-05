@@ -1,3 +1,11 @@
+2009-09-05  Roland Huss  <roland@consol.de>
+
+	* lib/Schedule/Cron.pm: Fixed issue for certain timeszone (like
+	PST8PDT) where a backward DST switch make Cron.pm running amok by
+	firing each job triggered in the extra hour without a delay
+	between. Thanks A LOT to Eric Wilhelm for spotting and analysing
+	this issue.
+	 
 2009-04-03  Roland Huss  <roland@consol.de>
 
 	* Released Version 0.98

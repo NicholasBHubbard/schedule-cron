@@ -18,7 +18,6 @@ my $build = Module::Build->new
    build_requires => {
                       "Test::More" => "0",
                       "Test" => "0",
-                      "Time::Mock" => "0",
                      },                       
    recommends => {
                   "ioctl.ph" => 0,

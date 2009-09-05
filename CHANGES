@@ -1,3 +1,8 @@
+0.99
+- Fixed issue when switching back DST which can result into amok 
+  running jobs during this period. The behaviour for jobs triggered
+  within this rewinded hour is still not defined properly (yet). 
+
 0.98
 
 - New option 'after_job' for new() which allows for a callback run

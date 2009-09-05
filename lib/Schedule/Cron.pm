@@ -1,7 +1,5 @@
 #!/usr/bin/perl -w
 
-# $Id: Cron.pm,v 1.16 2006/11/27 13:42:52 roland Exp $
-
 =head1 NAME
 
 Cron - cron-like scheduler for Perl subroutines
@@ -81,7 +79,7 @@ BEGIN {
 }
 
 
-$VERSION = "0.99_1";
+$VERSION = "0.99_2";
 
 our $DEBUG = 0;
 my %STARTEDCHILD = ();
@@ -742,7 +740,7 @@ sub run
     {
         while (42) 
         {
-            my ($index,$time,$dst_back) = @{shift @{$self->{queue}}};
+            my ($index,$time) = @{shift @{$self->{queue}}};
             my $now = time;
             my $sleep = 0;
             if ($time < $now)
@@ -754,17 +752,8 @@ sub run
                     $self->_update_queue($index);
                     next;
                 }
-                if ($dst_back) {
-                    # We are adding hours as long as we have a negative sleep
-                    # interval: 
-                    $sleep = $time - $now;
-                    do { 
-                        $sleep += 3600;
-                    } while ($sleep < 0);
-                    dbg "Adjusted sleep to $sleep because of DST back flip (time - now = ",$time - $now,")";
-                }
                 # At least a safety airbag
-                $sleep = 1 unless $sleep;
+                $sleep = 1;
             }
             else
             {
@@ -1141,17 +1130,23 @@ sub _execute
 sub _update_queue 
 { 
     my $self = shift;
-    
     my $index = shift;
-    
     my $entry = $self->get_entry($index);
     
     my $new_time = $self->get_next_execution_time($entry->{time});
     # Check, whether next execution time is *smaller* than the current time.
     # This can happen during DST backflip:
-    my $dst_back = $new_time < time ? 1 : 0;
+    my $now = time;
+    if ($new_time < $now) {
+        dbg "Adjusting time calculation because of DST back flip (new_time - now = ",$new_time - $now,")";
+        # We are adding hours as long as our target time is in the future
+        while ($new_time < $now) {
+            $new_time += 3600;
+        }
+    }
+
     dbg "Updating Queue: ",scalar(localtime($new_time));
-    $self->{queue} = [ sort { $a->[1] <=> $b->[1] } @{$self->{queue}},[$index,$new_time,$dst_back] ];
+    $self->{queue} = [ sort { $a->[1] <=> $b->[1] } @{$self->{queue}},[$index,$new_time] ];
     #  dbg "Queue now: ",Dumper($self->{queue});
 }
 
@@ -1290,7 +1285,6 @@ sub _calc_time
         {
             $dest_hour = ($dest_mday == $now_mday ? $dest_hour : 0);
         }
-    
         # Check for minute
         if ($expanded->[0]->[0] ne '*') 
         {
@@ -1322,7 +1316,6 @@ sub _calc_time
                 $dest_min = 0;
             } 
         }
-
         # Check for seconds
         if ($expanded->[5])
         {
@@ -1374,7 +1367,7 @@ sub _calc_time
         {
             # Invalid date i.e. (02/30/2008). Retry it with another, possibly
             # valid date            
-            my $t = parsedate($date); print scalar(localtime($t)),"\n";
+            my $t = parsedate($date); # print scalar(localtime($t)),"\n";
             ($dest_hour,$dest_mday,$dest_mon,$dest_year,$dest_wday) =
               (localtime(parsedate(" + 1 second",NOW=>$t)))  [2,3,4,5,6];
             $dest_mon++;
@@ -1646,16 +1639,34 @@ sub _verify_expanded_cron_entry {
 
 =back
 
-=head1 TODO
+=head1 DST ISSUES
 
-=over 
+Daylight saving occurs typically twice a year: In the first switch, one hour is
+skipped. Any job which would trigger in this skipped hour will be fired in the
+next hour. So, when the DST switch goes from 2:00 to 3:00 a job would is
+scheduled for 2:43, then it will be executed at 3:43.
 
-=item *
+For the reverse, backwards switch later in the year, the behaviour is
+undefined. Two possible behaviours can occur: For jobs triggered in short
+intervals, where the next execution time would fire in the extra hour as well,
+the job could be executed again or skipped in this extra hour. For the time
+being running C<Schedule::Cron> in C<MET> would skip the extra job, in
+C<PST8PDT> it would execute a second time. The reason is the way how
+L<Time::ParseDate> calculates epoch times for dates given like C<02:50:00
+2009/10/25>. Should it return the seconds since 1970 for this time happening
+'first', or for this time in the extra hour ?. As it turns out,
+L<Time::ParseDate> returns the seconds for the first occurence for C<PST8PDT>
+and for the second occurence for C<MET>. Unfortunately, there is no way to
+specify I<which> entry L<Time::ParseDate> should pick (until now). Of course,
+after all, this is obviously not L<Time::ParseDate>'s fault, since a simple
+date specification within the DST backswitch period B<is> ambigious.
 
-Provide a C<reload()> method for reexaming the crontab file 
+Since changing the algorithm which worked now for over ten years would be too
+risky and I don't see any simple solution for this right now, it is likely that
+this I<undefined> behaviour will exist for some time. Maybe some hero is coming
+along and will fix this, but this is probably not me ;-)
 
-=back
-
+Sorry for that.
 
 =head1 LICENSE
 
