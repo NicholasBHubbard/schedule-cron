@@ -1642,29 +1642,29 @@ sub _verify_expanded_cron_entry {
 =head1 DST ISSUES
 
 Daylight saving occurs typically twice a year: In the first switch, one hour is
-skipped. Any job which would trigger in this skipped hour will be fired in the
+skipped. Any job which which triggers in this skipped hour will be fired in the
 next hour. So, when the DST switch goes from 2:00 to 3:00 a job would is
 scheduled for 2:43, then it will be executed at 3:43.
 
-For the reverse, backwards switch later in the year, the behaviour is
+For the reverse backwards switch later in the year, the behaviour is
 undefined. Two possible behaviours can occur: For jobs triggered in short
 intervals, where the next execution time would fire in the extra hour as well,
-the job could be executed again or skipped in this extra hour. For the time
-being running C<Schedule::Cron> in C<MET> would skip the extra job, in
-C<PST8PDT> it would execute a second time. The reason is the way how
-L<Time::ParseDate> calculates epoch times for dates given like C<02:50:00
-2009/10/25>. Should it return the seconds since 1970 for this time happening
-'first', or for this time in the extra hour ?. As it turns out,
-L<Time::ParseDate> returns the seconds for the first occurence for C<PST8PDT>
-and for the second occurence for C<MET>. Unfortunately, there is no way to
-specify I<which> entry L<Time::ParseDate> should pick (until now). Of course,
-after all, this is obviously not L<Time::ParseDate>'s fault, since a simple
-date specification within the DST backswitch period B<is> ambigious.
+the job could be executed again or skipped in this extra hour. Currently,
+running C<Schedule::Cron> in C<MET> would skip the extra job, in C<PST8PDT> it
+would execute a second time. The reason is the way how L<Time::ParseDate>
+calculates epoch times for dates given like C<02:50:00 2009/10/25>. Should it
+return the seconds since 1970 for this time happening 'first', or for this time
+in the extra hour ? As it turns out, L<Time::ParseDate> returns the seconds
+for the first occurence for C<PST8PDT> and for the second occurence for
+C<MET>. Unfortunately, there is no way to specify I<which> entry
+L<Time::ParseDate> should pick (until now). Of course, after all, this is
+obviously not L<Time::ParseDate>'s fault, since a simple date specification
+within the DST backswitch period B<is> ambigious.
 
-Since changing the algorithm which worked now for over ten years would be too
-risky and I don't see any simple solution for this right now, it is likely that
-this I<undefined> behaviour will exist for some time. Maybe some hero is coming
-along and will fix this, but this is probably not me ;-)
+Since changing the internal algorithm which worked now for over ten years would
+be too risky and I don't see any simple solution for this right now, it is
+likely that this I<undefined> behaviour will exist for some time. Maybe some
+hero is coming along and will fix this, but this is probably not me ;-)
 
 Sorry for that.
 
