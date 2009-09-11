@@ -79,7 +79,7 @@ BEGIN {
 }
 
 
-$VERSION = "0.99_2";
+$VERSION = "0.99";
 
 our $DEBUG = 0;
 my %STARTEDCHILD = ();
@@ -1654,12 +1654,15 @@ running C<Schedule::Cron> in C<MET> would skip the extra job, in C<PST8PDT> it
 would execute a second time. The reason is the way how L<Time::ParseDate>
 calculates epoch times for dates given like C<02:50:00 2009/10/25>. Should it
 return the seconds since 1970 for this time happening 'first', or for this time
-in the extra hour ? As it turns out, L<Time::ParseDate> returns the seconds
-for the first occurence for C<PST8PDT> and for the second occurence for
-C<MET>. Unfortunately, there is no way to specify I<which> entry
+in the extra hour ? As it turns out, L<Time::ParseDate> returns the epoch time
+of the first occurence for C<PST8PDT> and for C<MET> it returns the second
+occurence. Unfortunately, there is no way to specify I<which> entry
 L<Time::ParseDate> should pick (until now). Of course, after all, this is
 obviously not L<Time::ParseDate>'s fault, since a simple date specification
-within the DST backswitch period B<is> ambigious.
+within the DST backswitch period B<is> ambigious. However, it would be nice if
+the parsing behaviour of L<Time::ParseDate> would be consistent across time
+zones (a ticket has be raised for fixing this). Then L<Schedule::Cron>'s
+behaviour within a DST backward switch would be consistent as well.
 
 Since changing the internal algorithm which worked now for over ten years would
 be too risky and I don't see any simple solution for this right now, it is
@@ -1677,7 +1680,7 @@ modify it under the same terms as Perl itself.
 
 =head1 AUTHOR
 
-                                                    ...roland
+... roland
 
 =cut
 
