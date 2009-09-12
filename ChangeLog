@@ -1,3 +1,7 @@
+2009-09-12  Roland Huss  <roland@consol.de>
+
+	* Released Version 0.99
+
 2009-09-05  Roland Huss  <roland@consol.de>
 
 	* lib/Schedule/Cron.pm: Fixed issue for certain timeszone (like
