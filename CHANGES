@@ -1,4 +1,5 @@
 0.99
+
 - Fixed issue when switching back DST which can result into amok 
   running jobs during this period. The behaviour for jobs triggered
   within this rewinded hour is still not defined properly (yet). 
