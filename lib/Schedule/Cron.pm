@@ -35,7 +35,7 @@ Cron - cron-like scheduler for Perl subroutines
 =head1 DESCRIPTION
 
 This module provides a simple but complete cron like scheduler.  I.e this
-modules can be used for periodically executing Perl subroutines.  The dates and
+module can be used for periodically executing Perl subroutines.  The dates and
 parameters for the subroutines to be called are specified with a format known
 as crontab entry (see L<"METHODS">, C<add_entry()> and L<crontab(5)>)
 
