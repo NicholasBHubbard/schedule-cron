@@ -41,15 +41,15 @@ as crontab entry (see L<"METHODS">, C<add_entry()> and L<crontab(5)>)
 
 The philosophy behind C<Schedule::Cron> is to call subroutines periodically
 from within one single Perl program instead of letting C<cron> trigger several
-(possibly different) perl scripts. Everything under one roof.  Furthermore
+(possibly different) Perl scripts. Everything under one roof.  Furthermore,
 C<Schedule::Cron> provides mechanism to create crontab entries dynamically,
 which isn't that easy with C<cron>.
 
 C<Schedule::Cron> knows about all extensions (well, at least all extensions I'm
 aware of, i.e those of the so called "Vixie" cron) for crontab entries like
-ranges including 'steps', specification of month and days of the week by name
-or coexistence of lists and ranges in the same field.  And even a bit more
-(like lists and ranges with symbolic names).
+ranges including 'steps', specification of month and days of the week by name,
+or coexistence of lists and ranges in the same field.  It even supports a bit
+more (like lists and ranges with symbolic names).
 
 =head1 METHODS
 
@@ -79,7 +79,7 @@ BEGIN {
 }
 
 
-$VERSION = "0.99";
+$VERSION = "1.00_1";
 
 our $DEBUG = 0;
 my %STARTEDCHILD = ();
@@ -110,7 +110,7 @@ my @RANGES = (
               [ 0,31 ],
               [ 0,12 ],
               [ 0,7  ],
-              [ 0,60 ]
+              [ 0,59 ]
              );
 
 my @LOWMAP = ( 
