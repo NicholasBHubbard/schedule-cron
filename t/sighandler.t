@@ -4,8 +4,13 @@
 # $Id: sighandler.t,v 1.2 2006/11/27 13:42:52 roland Exp $
 
 use Schedule::Cron;
-use Test::More tests => 1;
+use Test::More;
 
+if ($^O =~ /Win32/i) {
+    plan skip_all => "Test doesn't work on Win32";
+} else {
+    plan tests => 1;
+}
 $| = 1;
 
 SKIP: {
