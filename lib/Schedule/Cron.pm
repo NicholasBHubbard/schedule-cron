@@ -636,8 +636,8 @@ sub delete_entry
 =item $cron->update_entry($idx,$entry)
 
 Updates the entry with index C<$idx>. C<$entry> is a hash ref as descibed in
-C<list_entries()> and must contain at least a value C<$entry->{time}>. If no
-C<$entry->{dispatcher}> is given, then the default dispatcher is used.  This
+C<list_entries()> and must contain at least a value C<$entry-E<gt>{time}>. If no
+C<$entry-E<gt>{dispatcher}> is given, then the default dispatcher is used.  This
 method returns the old entry on success, C<undef> otherwise.
 
 =cut 
