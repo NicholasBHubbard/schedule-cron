@@ -20,7 +20,6 @@ my $time;
 my $skip = 0;
 while (defined($_=<DATA>) && $_ !~ /^end/i) {
   chomp;
-  next if $skip;
   if (/^Reftime:\s*(.*)$/) {
       $time = $1;
       $time =~ s/\#.*$//;
@@ -35,6 +34,7 @@ while (defined($_=<DATA>) && $_ !~ /^end/i) {
       $skip = 0;
       next;
   }
+  next if $skip;
   s/^\s*(.*)\s*/$1/;
   next if /^\#/ || /^$/;
   my @args = split(/\s+/,$_,6);
