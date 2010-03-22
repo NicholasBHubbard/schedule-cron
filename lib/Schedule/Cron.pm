@@ -151,7 +151,7 @@ sub REAPER {
 # This method is called in strategic places.
 sub _cleanup_process_list {
     for my $k (keys %STARTEDCHILD) {
-        delete $STARTEDCHILD{$k} unless $STARTEDCHILD{$_};
+        delete $STARTEDCHILD{$k} unless $STARTEDCHILD{$k};
     }
 }
 
