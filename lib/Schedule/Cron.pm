@@ -125,12 +125,13 @@ my @LOWMAP = (
 sub REAPER {
     if ($HAS_POSIX)
     {
-        # Only on platforms supporting POSIX semantisc
         foreach my $pid (keys %STARTEDCHILD) {
-            my $res = $HAS_POSIX ? waitpid($pid, WNOHANG) : waitpid($pid,0);
-            if ($res > 0) {
-                # We reaped a truly running process
-                delete $STARTEDCHILD{$pid};
+            if ($STARTEDCHILD{$pid}) {
+                my $res = $HAS_POSIX ? waitpid($pid, WNOHANG) : waitpid($pid,0);
+                if ($res > 0) {
+                    # We reaped a truly running process
+                    $STARTEDCHILD{$pid} = 0;
+                }
             }
         }
     } 
@@ -140,6 +141,17 @@ sub REAPER {
         while($waitedpid != -1) {
             $waitedpid = wait;
         }
+    }
+}
+
+# Cleaning is done in extrac method called from the main 
+# process in order to avoid event handlers modifying this
+# global hash which can leed to memory errors
+# See #55741 on rt.cpan.org for more details on this
+# This method is called in strategic places.
+sub _cleanup_process_list {
+    for my $k (keys %STARTEDCHILD) {
+        delete $STARTEDCHILD{$k} unless $STARTEDCHILD{$_};
     }
 }
 
@@ -625,6 +637,20 @@ sub delete_entry
     if ($idx <= $#{$self->{time_table}})
     {
         $self->{entries_changed} = 1;
+
+        # Remove entry from $self->{map} which 
+        # remembers the index in the timetable by name (==id)
+        # and update all larger indexes appropriately
+        # Fix for #54692
+        my $map = $self->{map};
+        foreach my $key (keys %{$map}) {
+            if ($map->{$key} > $idx) {
+                $map->{$key}--;
+            } elsif ($map->{$key} == $idx) {
+                delete $map->{$key};
+            }
+        }
+        
         return splice @{$self->{time_table}},$idx,1;
     }
     else
@@ -772,6 +798,7 @@ sub run
             }
 
             $self->_execute($index,$cfg);
+            $self->_cleanup_process_list;
 
             if ($self->{entries_changed}) {
                dbg "rebuilding queue";
