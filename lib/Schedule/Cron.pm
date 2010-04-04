@@ -123,6 +123,7 @@ my @LOWMAP = (
              );
 
 sub REAPER {
+    local ($!,%!);
     if ($HAS_POSIX)
     {
         foreach my $pid (keys %STARTEDCHILD) {
