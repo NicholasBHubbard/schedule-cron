@@ -1,3 +1,10 @@
+2010-05-14  Roland Huss  <roland@consol.de>
+
+	* Released Version 1.00. This is considered to be the final 
+	  release. After 10+ years, Schedule::Cron is now feature complete, 
+	  only bug fixes might lead to an additional release. Thanks for
+	  your patience ;-)
+
 2009-09-12  Roland Huss  <roland@consol.de>
 
 	* Released Version 0.99

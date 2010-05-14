@@ -1,7 +1,8 @@
 1.00
+
 - Fix for RT #54692 occured when removing an entry
-- Try to workaround #55741 (a perl bug occuring when modyfing 
-  global hashes in an event handler)
+- Fixed #55741 with help from Clinton Gormley (a perl bug occuring when 
+  modyfing global hashes in an event handler)
 - Fixed RT #50325 which could cause an infinite loop when calculating
   the next execution time
 - Further bug fixes.
