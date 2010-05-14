@@ -79,7 +79,7 @@ BEGIN {
 }
 
 
-$VERSION = "1.00";
+$VERSION = "1.01_1";
 
 our $DEBUG = 0;
 my %STARTEDCHILD = ();
@@ -124,33 +124,35 @@ my @LOWMAP = (
 
 sub REAPER {
     local ($!,%!);
-    if ($HAS_POSIX)
-    {
-        foreach my $pid (keys %STARTEDCHILD) {
-            if ($STARTEDCHILD{$pid}) {
-                my $res = $HAS_POSIX ? waitpid($pid, WNOHANG) : waitpid($pid,0);
-                if ($res > 0) {
-                    # We reaped a truly running process
-                    $STARTEDCHILD{$pid} = 0;
-                }
-            }
+    my $kid;
+    do {
+        # Only on POSIX systems the wait will return immediately only 
+        # if there are no finished child processes. Simple 'wait' will
+        # wait blocking on childs.
+        $kid = $HAS_POSIX ? waitpid(-1, WNOHANG) : wait;
+        if ($kid > 0 && defined $STARTEDCHILD{$kid}) {
+            # We don't delete the hash entry here to avoid an issue
+            # when modifying a global hash from multiple threads
+            $STARTEDCHILD{$kid} = 0;
         }
-    } 
-    else
-    {
-        my $waitedpid = 0;
-        while($waitedpid != -1) {
-            $waitedpid = wait;
-        }
-    }
+    } while ($kid > 0);
 }
 
 # Cleaning is done in extra method called from the main 
 # process in order to avoid event handlers modifying this
 # global hash which can lead to memory errors.
-# See #55741 on rt.cpan.org for more details on this.
+# See RT #55741 for more details on this.
 # This method is called in strategic places.
 sub _cleanup_process_list {
+    # Cleanup processes even on those systems, where the SIGCHLD is not 
+    # propagated. Only do this for POSIX, otherwise this call would block 
+    # until all child processes would have been finished.
+    # See RT #56926 for more details.
+    &REAPER() if $HAS_POSIX;
+
+    # Delete entries from this global hash only from within the main
+    # thread/process. Hence, this method must not be called from within 
+    # a signalhandler    
     for my $k (keys %STARTEDCHILD) {
         delete $STARTEDCHILD{$k} unless $STARTEDCHILD{$k};
     }
@@ -651,7 +653,6 @@ sub delete_entry
                 delete $map->{$key};
             }
         }
-        
         return splice @{$self->{time_table}},$idx,1;
     }
     else

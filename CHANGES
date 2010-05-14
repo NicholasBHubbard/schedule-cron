@@ -1,3 +1,8 @@
+1.01
+
+- Fix for RT #56926 which causes systems without SIGCHLD to exit on
+  after 64 forked processes
+
 1.00
 
 - Fix for RT #54692 occured when removing an entry
