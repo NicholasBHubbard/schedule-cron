@@ -79,7 +79,7 @@ BEGIN {
 }
 
 
-$VERSION = "1.01_1";
+$VERSION = "1.01_2";
 
 our $DEBUG = 0;
 my %STARTEDCHILD = ();
@@ -122,7 +122,47 @@ my @LOWMAP = (
               {},
              );
 
+
+# Currently, there are two ways for reaping. One, which only waits explicitely
+# on PIDs it forked on its own, and one which waits on all PIDs (even on those
+# it doesn't forked itself). The later has been proved to work on Win32 with
+# the 64 threads limit (RT #56926), but not when one creates forks on ones
+# one. The specific reaper works for RT #55741.
+
+# It tend to use the specific one, if it also resolves RT #56926. Both are left
+# here for reference until a decision has been done for 1.01
+
 sub REAPER {
+    &_reaper_all();
+}
+
+# Specific reaper
+sub _reaper_specific {
+    local ($!,%!);
+    if ($HAS_POSIX)
+    {
+        foreach my $pid (keys %STARTEDCHILD) {
+            if ($STARTEDCHILD{$pid}) {
+                my $res = $HAS_POSIX ? waitpid($pid, WNOHANG) : waitpid($pid,0);
+                if ($res > 0) {
+                    # We reaped a truly running process
+                    $STARTEDCHILD{$pid} = 0;
+                    dbg "Reaped child $res" if $DEBUG;
+                }
+            }
+        }
+    } 
+    else
+    {
+        my $waitedpid = 0;
+        while($waitedpid != -1) {
+            $waitedpid = wait;
+        }
+    }
+}
+
+# Catch all reaper
+sub _reaper_all {
     local ($!,%!);
     my $kid;
     do 
@@ -131,13 +171,15 @@ sub REAPER {
         # if there are no finished child processes. Simple 'wait'
         # waits blocking on childs.
         $kid = $HAS_POSIX ? waitpid(-1, WNOHANG) : wait;
-        if ($kid > 0 && defined $STARTEDCHILD{$kid}) 
+        print "Kid: $kid\n";
+        if ($kid != 0 && $kid != -1 && defined $STARTEDCHILD{$kid}) 
         {
             # We don't delete the hash entry here to avoid an issue
-            # when modifying a global hash from multiple threads
+            # when modifyinga global hash from multiple threads
             $STARTEDCHILD{$kid} = 0;
+            dbg "Reaped child $kid" if $DEBUG;
         }
-    } while ($kid > 0);
+    } while ($kid != 0 && $kid != -1);
 
     # Note to myself: Is the %STARTEDCHILD hash really necessary if we use -1
     # for waiting (i.e. for waiting on any child ?). In the current
@@ -152,11 +194,15 @@ sub REAPER {
 # This method is called in strategic places.
 sub _cleanup_process_list 
 {
+    my ($self, $cfg) = @_;
+    
     # Cleanup processes even on those systems, where the SIGCHLD is not 
     # propagated. Only do this for POSIX, otherwise this call would block 
     # until all child processes would have been finished.
     # See RT #56926 for more details.
-    &REAPER() if $HAS_POSIX;
+
+    # Do not cleanup if nofork because jobs that fork will do their own reaping.
+    &REAPER() if $HAS_POSIX && !$cfg->{nofork};
 
     # Delete entries from this global hash only from within the main
     # thread/process. Hence, this method must not be called from within 
@@ -204,6 +250,11 @@ different time. This behaviour is fundamentally different to the 'fork' mode,
 where each jobs gets its own process and hence a B<copy> of the process space,
 independent of each other job and the main process. This is due to the nature
 of the  C<fork> system call. 
+
+=item nostatus =>  1
+
+Do not update status in $0.  Set this if you don't want ps to reveal the internals
+of your application, including job argument lists.  Default is 0 (update status).
 
 =item skip => 1
 
@@ -255,13 +306,51 @@ purposes for example like in the following code snippet:
   
    my $cron = new Schedule::Cron(.... , log => $log_method);
 
+=item loglevel => <-1,0,1,2>
+
+Restricts logging to the specified severity level or below.  Use 0 to have all
+messages generated, 1 for only warnings and errors and 2 for errors only.
+Default is 0 (all messages).  A loglevel of -1 (debug) will include job
+argument lists (also in $0) in the job start message logged with a level of 0
+or above. You may have security concerns with this. Unless you are debugging,
+use 0 or higher. A value larger than 2 will disable logging completely.
+
+Although you can filter in your log routine, generating the messages can be
+expensive, for example if you pass arguments pointing to large hashes.  Specifying
+a loglevel avoids formatting data that your routine would discard.
+
 =item processprefix => <name>
 
 Cron::Schedule sets the process' name (i.e. C<$0>) to contain some informative
 messages like when the next job executes or with which arguments a job is
 called. By default, the prefix for this labels is C<Schedule::Cron>. With this
 option you can set it to something different. You can e.g. use C<$0> to include
-the original process name.
+the original process name.  You can inhibit this with the C<nostatus> option, and
+prevent the argument display by setting C<loglevel> to zero or higher.
+
+=item sleep => \&hook
+
+If specified, &hook will be called instead of sleep(), with the time to sleep
+in seconds as first argument and the Schedule::Cron object as second.  This hook
+allows you to use select() instead of sleep, so that you can handle IO, for
+example job requests from a network connection.
+
+e.g.
+
+  $cron->run( { sleep => \&sleep_hook, nofork => 1 } );
+
+  sub sleep_hook {
+    my ($time, $cron) = @_;
+
+    my ($rin, $win, $ein) = ('','','');
+    my ($rout, $wout, $eout);
+    vec($rin, fileno(STDIN), 1) = 1;
+    my ($nfound, $ttg) = select($rout=$rin, $wout=$win, $eout=$ein, $time);
+    if ($nfound) {
+	   handle_io($rout, $wout, $eout);
+    }
+    return;
+}
 
 =back
 
@@ -528,7 +617,7 @@ sub add_entry
         {
             die "You have to provide a simple scalar if using eval" if (ref($args));
             my $orig_args = $args;
-            dbg "Evaled args ",Dumper($args);
+            dbg "Evaled args ",Dumper($args) if $DEBUG;
             $args = [ eval $args ];
             die "Cannot evaluate args (\"$orig_args\")"
               if $@;
@@ -730,7 +819,7 @@ If running in daemon mode, name the optional file, in which the process id of
 the scheduler process should be written. By default, no PID File will be
 created.
 
-=item nofork, skip, catch, log
+=item nofork, skip, catch, log, loglevel, nostatus, sleep
 
 See C<new()> for a description of these configuration parameters, which can be
 provided here as well. Note, that the options given here overrides those of the
@@ -758,25 +847,36 @@ sub run
     $cfg = { %{$self->{cfg}}, %$cfg }; # Merge in global config;
 
     my $log = $cfg->{log};
+    my $loglevel = $cfg->{loglevel};
+    $loglevel = 0 unless defined $loglevel;
+    my $sleeper = $cfg->{sleep};
 
-    $self->_build_initial_queue;
+    $self->_rebuild_queue;
     delete $self->{entries_changed};
     die "Nothing in schedule queue" unless @{$self->{queue}};
     
     # Install reaper now.
-    my $old_child_handler = $SIG{'CHLD'};
-    $SIG{'CHLD'} = sub {
-        &REAPER();
-        if ($old_child_handler && ref $old_child_handler eq 'CODE')
+    unless ($cfg->{nofork}) {
+        my $old_child_handler = $SIG{'CHLD'};
+        $SIG{'CHLD'} = sub {
+            &REAPER();
+            if ($old_child_handler && ref $old_child_handler eq 'CODE')
+            {
+                &$old_child_handler();
+            }
+        };
+    }
+    
+    my $mainloop = sub { 
+      MAIN:
+        while (42)          
         {
-            &$old_child_handler();
-        }
-    };
-
-    my $mainloop = sub 
-    {
-        while (42) 
-        {
+            unless (@{$self->{queue}}) # Queue length
+            { 
+                # Last job deleted itself, or we were run with no entries.
+                # We can't return, so throw an exception - perhaps somone will catch.
+                die "No more jobs to run\n";
+            }
             my ($index,$time) = @{shift @{$self->{queue}}};
             my $now = time;
             my $sleep = 0;
@@ -785,7 +885,7 @@ sub run
                 if ($cfg->{skip})
                 {
                     $log->(0,"Schedule::Cron - Skipping job $index")
-                      if $log;
+                      if $log && $loglevel <= 0;
                     $self->_update_queue($index);
                     next;
                 }
@@ -796,24 +896,36 @@ sub run
             {
                 $sleep = $time - $now;
             }
-            $0 = $self->_get_process_prefix()." MainLoop - next: ".scalar(localtime($time));
+            $0 = $self->_get_process_prefix()." MainLoop - next: ".scalar(localtime($time)) unless $cfg->{nostatus};
             if (!$time) {
                 die "Internal: No time found, self: ",$self->{queue},"\n" unless $time;
             }
 
-            dbg "R: sleep = $sleep | ",scalar(localtime($time))," (",scalar(localtime($now)),")";
+            dbg "R: sleep = $sleep | ",scalar(localtime($time))," (",scalar(localtime($now)),")" if $DEBUG;
+
             while ($sleep > 0) 
             {
-                sleep($sleep);
+                if ($sleeper) 
+                {
+                    $sleeper->($sleep,$self);
+                    if ($self->{entries_changed})
+                    {
+                        $self->_rebuild_queue;
+                        delete $self->{entries_changed};
+                        redo MAIN;
+                    }
+                } else {
+                    sleep($sleep);
+                }
                 $sleep = $time - time;
             }
 
             $self->_execute($index,$cfg);
-            $self->_cleanup_process_list;
+            $self->_cleanup_process_list($cfg);
 
             if ($self->{entries_changed}) {
-               dbg "rebuilding queue";
-               $self->_build_initial_queue;
+               dbg "rebuilding queue" if $DEBUG;
+               $self->_rebuild_queue;
                delete $self->{entries_changed};
             } else {
                $self->_update_queue($index);
@@ -878,7 +990,7 @@ sub run
             }
             open STDERR, '>&STDOUT' or die "Can't dup stdout: $!";
             
-            $0 = $self->_get_process_prefix()." MainLoop";
+            $0 = $self->_get_process_prefix()." MainLoop" unless $cfg->{nostatus};
             &$mainloop();
         }
     } 
@@ -1040,7 +1152,7 @@ sub get_next_execution_time
       $expanded[4] = \@bak;
       $expanded[2] = [ '*' ];
       my $t2 = $self->_calc_time($now,\@expanded);
-      dbg "MDay : ",scalar(localtime($t1))," -- WDay : ",scalar(localtime($t2));
+      dbg "MDay : ",scalar(localtime($t1))," -- WDay : ",scalar(localtime($t2)) if $DEBUG;
       return $t1 < $t2 ? $t1 : $t2;
   } 
   else 
@@ -1056,7 +1168,7 @@ sub get_next_execution_time
 
 # Build up executing queue and delete any
 # existing entries
-sub _build_initial_queue 
+sub _rebuild_queue 
 { 
     my $self = shift;
     $self->{queue} = [ ];
@@ -1091,13 +1203,14 @@ sub _execute
 
 
   my $log = $cfg->{log};
+  my $loglevel = $cfg->{loglevel} || 0;
 
   unless ($cfg->{nofork})
   {
-      if ($pid = fork) 
+      if ($pid = fork)
       {
           # Parent
-          $log->(0,"Schedule::Cron - Forking child PID $pid") if $log;
+          $log->(0,"Schedule::Cron - Forking child PID $pid") if $log && $loglevel <= 0;
           # Register PID
           $STARTEDCHILD{$pid} = 1;
           return;
@@ -1117,12 +1230,13 @@ sub _execute
   }
 
 
-  my $args_label = @args ? "with (".join(",",$self->_format_args(@args)).")" : "";
-  $0 = $self->_get_process_prefix()." Dispatched with $args_label"
-    unless $cfg->{nofork};
-  $log->(0,"Schedule::Cron - Starting job $index $args_label")
-    if $log;
-
+  if ($log && $loglevel <= 0 || !$cfg->{nofork} && !$cfg->{nostatus}) {
+      my $args_label = (@args && $loglevel <= -1) ? " with (".join(",",$self->_format_args(@args)).")" : "";
+      $0 = $self->_get_process_prefix()." Dispatched job $index$args_label"
+        unless $cfg->{nofork} || $cfg->{nostatus};
+      $log->(0,"Schedule::Cron - Starting job $index$args_label")
+        if $log && $loglevel <= 0;
+  }
   my $dispatch_result;
   if ($cfg->{catch})
   {
@@ -1134,7 +1248,7 @@ sub _execute
       if ($@)
       {
           $log->(2,"Schedule::Cron - Error within job $index: $@")
-            if $log;
+            if $log && $loglevel <= 2;
       }
   }
   else
@@ -1153,14 +1267,15 @@ sub _execute
           if ($@)
           {
               $log->(2,"Schedule::Cron - Error while calling after_job callback with retval = $dispatch_result: $@")
-                if $log;
+                if $log && $loglevel <= 2;
           }
       } else {
-          $log->(2,"Schedule::Cron - Invalid after_job callback, it's not a code ref (but ",$job,")");
+          $log->(2,"Schedule::Cron - Invalid after_job callback, it's not a code ref (but ",$job,")")
+            if $log && $loglevel <= 2;
       }
   }
 
-  $log->(0,"Schedule::Cron - Finished job $index") if $log;
+  $log->(0,"Schedule::Cron - Finished job $index") if $log && $loglevel <= 0;
   exit unless $cfg->{nofork};
 }
 
@@ -1175,15 +1290,15 @@ sub _update_queue
     # Check, whether next execution time is *smaller* than the current time.
     # This can happen during DST backflip:
     my $now = time;
-    if ($new_time < $now) {
-        dbg "Adjusting time calculation because of DST back flip (new_time - now = ",$new_time - $now,")";
+    if ($new_time <= $now) {
+        dbg "Adjusting time calculation because of DST back flip (new_time - now = ",$new_time - $now,")" if $DEBUG;
         # We are adding hours as long as our target time is in the future
-        while ($new_time < $now) {
+        while ($new_time <= $now) {
             $new_time += 3600;
         }
     }
 
-    dbg "Updating Queue: ",scalar(localtime($new_time));
+    dbg "Updating Queue: ",scalar(localtime($new_time)) if $DEBUG;
     $self->{queue} = [ sort { $a->[1] <=> $b->[1] } @{$self->{queue}},[$index,$new_time] ];
     #  dbg "Queue now: ",Dumper($self->{queue});
 }
@@ -1217,7 +1332,7 @@ sub _calc_time
     # Airbag...
     while ($dest_year <= $now_year + 1) 
     { 
-        dbg "Parsing $dest_hour:$dest_min:$dest_sec $dest_year/$dest_mon/$dest_mday";
+        dbg "Parsing $dest_hour:$dest_min:$dest_sec $dest_year/$dest_mon/$dest_mday" if $DEBUG;
         
         # Check month:
         if ($expanded->[3]->[0] ne '*') 
@@ -1248,7 +1363,7 @@ sub _calc_time
                         $dest_mon = 1;
                         $dest_year++;
                     }
-                    dbg "Backtrack mday: $dest_mday/$dest_mon/$dest_year";
+                    dbg "Backtrack mday: $dest_mday/$dest_mon/$dest_year" if $DEBUG;
                     next;
                 }
             }
@@ -1273,9 +1388,9 @@ sub _calc_time
             $mon++;
             $year += 1900;
             
-            dbg "Calculated $mday/$mon/$year for weekday ",$WDAYS[$dest_wday];
+            dbg "Calculated $mday/$mon/$year for weekday ",$WDAYS[$dest_wday] if $DEBUG;
             if ($mon != $dest_mon || $year != $dest_year) {
-                dbg "backtracking";
+                dbg "backtracking" if $DEBUG;
                 $dest_mon = $mon;
                 $dest_year = $year;
                 $dest_mday = 1;
@@ -1393,7 +1508,7 @@ sub _calc_time
         # We did it !!
         my $date = sprintf("%2.2d:%2.2d:%2.2d %4.4d/%2.2d/%2.2d",
                            $dest_hour,$dest_min,$dest_sec,$dest_year,$dest_mon,$dest_mday);
-        dbg "Next execution time: $date ",$WDAYS[$dest_wday];
+        dbg "Next execution time: $date ",$WDAYS[$dest_wday] if $DEBUG;
         my $result = parsedate($date, VALIDATE => 1);
         # Check for a valid date
         if ($result)
@@ -1460,6 +1575,9 @@ sub _get_process_prefix {
 
 # our very own debugging routine
 # ('guess everybody has its own style ;-)
+# Callers check $DEBUG on the critical path to save the computes
+# used to produce expensive arguments.  Omitting those would be
+# functionally correct, but rather wasteful.
 sub dbg  
 {
   if ($DEBUG) 
@@ -1681,8 +1799,8 @@ sub _verify_expanded_cron_entry {
 
 Daylight saving occurs typically twice a year: In the first switch, one hour is
 skipped. Any job which which triggers in this skipped hour will be fired in the
-next hour. So, when the DST switch goes from 2:00 to 3:00 a job would is
-scheduled for 2:43, then it will be executed at 3:43.
+next hour. So, when the DST switch goes from 2:00 to 3:00 a job which is
+scheduled for 2:43 will be executed at 3:43.
 
 For the reverse backwards switch later in the year, the behaviour is
 undefined. Two possible behaviours can occur: For jobs triggered in short
@@ -1711,7 +1829,7 @@ Sorry for that.
 
 =head1 LICENSE
 
-Copyright 1999-2010 Roland Huss.
+Copyright 1999-2011 Roland Huss.
 
 This library is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.

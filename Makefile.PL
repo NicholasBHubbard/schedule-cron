@@ -6,7 +6,8 @@ WriteMakefile
    VERSION_FROM => "lib/Schedule/Cron.pm",
    ($] >= 5.005
     ? (ABSTRACT   => 'Cron-like scheduler for Perl subroutines',
-       AUTHOR     => 'Roland Huss (roland@cpan.org)')
+       AUTHOR     => 'Roland Huss (roland@cpan.org)',
+       PL_FILES => {})
     : ()),
    ($ExtUtils::MakeMaker::VERSION >= 6.3002 ?
     ('LICENSE'		=> 'perl', ) : ()),

@@ -21,3 +21,4 @@ t/pretty_print_args.t
 t/sighandler.t
 t/startup.t
 t/test.crontab
+t/delete_entry.t

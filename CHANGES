@@ -2,6 +2,10 @@
 
 - Fix for RT #56926 which causes systems without SIGCHLD to exit on
   after 64 forked processes
+- Patch for Makefile.PL applied which seems to have problems after the 
+  reorganisation of the directory layout (RT #57914)
+- Fix for RT #63089 which left over a time-window of 1 sec where
+  Schedule::Cron could run havoc.
 
 1.00
 
