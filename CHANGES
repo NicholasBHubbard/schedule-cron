@@ -9,7 +9,11 @@
 - Fixes for RT #68530 ("Exposing too much information..."), #68450
   ("Crash scheduling empty queue") and #68533 ("Thou shalt not REAP
   what thou has not forked...") provided by tlhackque. Thanks a lot !
-
+- New options:
+  * loglevel: Tuning of logoutput
+  * nostatus: Avoid setting $0 to next schedule time
+  * sleep: Custom sleep() function between two calls
+  
 1.00
 
 - Fix for RT #54692 occured when removing an entry
