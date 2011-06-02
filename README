@@ -122,17 +122,13 @@ and further usage examples.
 REPORTING BUGS
 --------------
 
-This module  is still in alpha  stage, so I expect  probably some bugs
-showing  up. I.e.  the  calculation of  the next  execution time  of a
-specific  crontab  entry  might  fail in  some  obscure  circumstances
-(though I did what I could to test it thoroughly).
+If  you  meet  a  bug  (say   hello  to  it  ;-),  open  a  ticket  at
+https://rt.cpan.org/Ticket/Create.html?Queue=Schedule-Cron.          
 
-If  you  meet  a bug  (say  hello  to  it  ;-),  please report  it  to
-roland@consol.de with  a subject like  "Schedule::Cron Bug-Report". In
-addition of a  problem description, please add a  short description of
-you OS, your  Perl version and the version  of Time::ParseDate you are
-using. If some of the provided tests fail, include the output of 'make
-test TEST_VERBOSE=1' as well.
+In addition of  a problem description, please add  a short description
+of you  OS, your Perl version  and the version  of Time::ParseDate you
+are using.  If some of the  provided tests fail, include the output of
+'make test TEST_VERBOSE=1' as well.
 
 If you suspect,  that the date calculation of  the next execution time
 is buggy, please  use the following interactive command  to generate a
@@ -149,7 +145,7 @@ specified in  a format understood by  'parsedate' from Time::ParseDate
 LICENSE
 -------
 
-Copyright 1999-2009 Roland Huss.
+Copyright 1999-2011 Roland Huss.
 
 This library is  free software; you can redistribute  it and/or modify
 it under the same terms as Perl itself.
