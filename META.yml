@@ -1,29 +1,26 @@
 ---
-name: Schedule-Cron
-version: 1.01_1
+abstract: 'cron-like scheduler for Perl subroutines'
 author:
-  - Roland Huss (roland@cpan.org)
-abstract: cron-like scheduler for Perl subroutines
-license: perl
-resources:
-  license: http://dev.perl.org/licenses/
+  - 'Roland Huss (roland@cpan.org)'
 build_requires:
   Test: 0
   Test::More: 0
-requires:
-  Data::Dumper: 0
-  Time::ParseDate: 99.00
-recommends:
-  Module::Build: 0
-  ioctl.ph: 0
-  sys::ioctl.ph: 0
 configure_requires:
-  Module::Build: 0.35
-provides:
-  Schedule::Cron:
-    file: lib/Schedule/Cron.pm
-    version: 1.01_1
-generated_by: Module::Build version 0.35
+  Module::Build: 0
+dynamic_config: 1
+generated_by: 'Module::Build version 0.38, CPAN::Meta::Converter version 2.110580'
+license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
   version: 1.4
+name: Schedule-Cron
+provides:
+  Schedule::Cron:
+    file: lib/Schedule/Cron.pm
+    version: 1.01_2
+requires:
+  Data::Dumper: 0
+  Time::ParseDate: 99.00
+resources:
+  license: http://dev.perl.org/licenses/
+version: 1.01_2

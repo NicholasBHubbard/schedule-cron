@@ -19,16 +19,12 @@ my $build = Module::Build->new
                       "Test::More" => "0",
                       "Test" => "0",
                      },                       
-   recommends => {
-                  "ioctl.ph" => 0,
-                  "sys::ioctl.ph" => 0,
-                  "Module::Build" => 0
-                 },
    keywords => [  "Cron", "Scheduler", "Job" ],
    provides => {
                 "Schedule::Cron" => {
                                file =>  "lib/Schedule/Cron.pm"
                               }
-               }
+               },
+   configure_requires => { 'Module::Build' => 0}
   );
 $build->create_build_script;
