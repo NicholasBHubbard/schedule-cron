@@ -125,17 +125,24 @@ my @LOWMAP = (
 sub REAPER {
     local ($!,%!);
     my $kid;
-    do {
-        # Only on POSIX systems the wait will return immediately only 
-        # if there are no finished child processes. Simple 'wait' will
-        # wait blocking on childs.
+    do 
+    {
+        # Only on POSIX systems the wait will return immediately 
+        # if there are no finished child processes. Simple 'wait'
+        # waits blocking on childs.
         $kid = $HAS_POSIX ? waitpid(-1, WNOHANG) : wait;
-        if ($kid > 0 && defined $STARTEDCHILD{$kid}) {
+        if ($kid > 0 && defined $STARTEDCHILD{$kid}) 
+        {
             # We don't delete the hash entry here to avoid an issue
             # when modifying a global hash from multiple threads
             $STARTEDCHILD{$kid} = 0;
         }
     } while ($kid > 0);
+
+    # Note to myself: Is the %STARTEDCHILD hash really necessary if we use -1
+    # for waiting (i.e. for waiting on any child ?). In the current
+    # implementation, %STARTEDCHILD is not used at all. It would be only 
+    # needed if we iterate over it to wait on pids specifically.
 }
 
 # Cleaning is done in extra method called from the main 
@@ -143,7 +150,8 @@ sub REAPER {
 # global hash which can lead to memory errors.
 # See RT #55741 for more details on this.
 # This method is called in strategic places.
-sub _cleanup_process_list {
+sub _cleanup_process_list 
+{
     # Cleanup processes even on those systems, where the SIGCHLD is not 
     # propagated. Only do this for POSIX, otherwise this call would block 
     # until all child processes would have been finished.
@@ -153,7 +161,8 @@ sub _cleanup_process_list {
     # Delete entries from this global hash only from within the main
     # thread/process. Hence, this method must not be called from within 
     # a signalhandler    
-    for my $k (keys %STARTEDCHILD) {
+    for my $k (keys %STARTEDCHILD) 
+    {
         delete $STARTEDCHILD{$k} unless $STARTEDCHILD{$k};
     }
 }
@@ -1702,7 +1711,7 @@ Sorry for that.
 
 =head1 LICENSE
 
-Copyright 1999-2009 Roland Huss.
+Copyright 1999-2010 Roland Huss.
 
 This library is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
