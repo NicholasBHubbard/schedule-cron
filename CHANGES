@@ -6,6 +6,9 @@
   reorganisation of the directory layout (RT #57914)
 - Fix for RT #63089 which left over a time-window of 1 sec where
   Schedule::Cron could run havoc.
+- Fixes for RT #68530 ("Exposing too much information..."), #68450
+  ("Crash scheduling empty queue") and #68533 ("Thou shalt not REAP
+  what thou has not forked...") provided by tlhackque. Thanks a lot !
 
 1.00
 
