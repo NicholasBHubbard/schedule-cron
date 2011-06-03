@@ -11,7 +11,7 @@ my $build = Module::Build->new
    license => "perl",
    
    requires => {
-                "Time::ParseDate" => "99.00",
+                "Time::ParseDate" => "2011.0505",
                 "Data::Dumper" => "0"
                },
    

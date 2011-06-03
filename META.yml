@@ -17,10 +17,10 @@ name: Schedule-Cron
 provides:
   Schedule::Cron:
     file: lib/Schedule/Cron.pm
-    version: 1.01_2
+    version: 1.01_3
 requires:
   Data::Dumper: 0
-  Time::ParseDate: 99.00
+  Time::ParseDate: 2011.0505
 resources:
   license: http://dev.perl.org/licenses/
-version: 1.01_2
+version: 1.01_3
