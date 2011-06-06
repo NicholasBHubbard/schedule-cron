@@ -116,10 +116,11 @@ my $cron = new Schedule::Cron( sub { print 'Loaded entry: ', join('', @_ ), "\n"
                                         sleep => \&idler
                                        } );
 
-$cron->add_entry( "* * * * *", \&init, 'Init', $cron );
+$cron->add_entry( "* * * * * *", \&init, 'Init', $cron );
 $cron->add_entry( "0 0 1 1 *", sub { print "Happy New Year\n"; }, "NewYear" );
 
 print "Please wait while initialization is scheduled\n";
+print help();
 
 $cron->run( { detach => 0 } );
 
@@ -174,7 +175,7 @@ sub init {
     vec( $rin, ($maxfd = $lsock->fileno()), 1 ) = 1;
     $servers{$maxfd} = { rsub=>sub { newConn( $lsock, $cron ); } };
 
-    print "Ready, my port is localhost::$port\n";
+    print "Ready, my port is localhost:$port\nTo connect:\n    telnet localhost $port\n";
 
     return;
 }
@@ -243,12 +244,13 @@ sub serverRd {
             next;
         }
 
-        if( $line =~ /^STATUS$/i ) {
-            $cx->{wbuf} .= status( $cron );
+        if( $line =~ /^STAT(?:US)?(?: (\w+))?$/i ) {
+            $cx->{wbuf} .= status( $cron, ($1 || 'normal') );
         } elsif( $line =~ /^ADD\s+(\w+)\s+"(.*?)"\s+(.*)$/i ) {
-            $cron->add_entry( $2, \&announce, $1, $3 );
-            $cx->{wbuf} .= "Added $2$CR$LF";
-        } elsif( $line =~ /^DEL(?:ETE)?\s+(\w+)$/i ) {
+            my( $name, $sched ) = ($1, $2);
+            $cron->add_entry( $sched, \&announce, $1, $3 );
+            $cx->{wbuf} .= "Added $name '$sched'$CR$LF";
+        } elsif( $line =~ /^DEL(?:ETE)?\s+(["\w]+)$/i ) {
             my $name = $1;
             my $idx = $cron->check_entry( $name );
             if( defined $idx ) {
@@ -257,7 +259,9 @@ sub serverRd {
             } else {
                 $cx->{wbuf} .= "$name not found$CR$LF";
             }
-        } elsif( $line =~ /^LOAD\s(.*)$/i ) {
+        } elsif( $line =~ /^HELP$/i ) {
+            $cx->{wbuf} .= help();
+        } elsif( $line =~ /^LOAD\s([\w\._-]+)$/i ) {
             my $cfg = $1; # Danger: File permissions of server are used here.
               eval {
                   $cron->load_crontab( $cfg );
@@ -311,6 +315,7 @@ sub announce {
 
 sub status {
     my $cron = shift;
+    my $level = shift;
 
     my $maxtwid = 0;
     my @entries = map { $_->[0] } sort { $a->[1] <=> $b->[1] }
@@ -321,7 +326,7 @@ sub status {
                                                    $cron->get_next_execution_time( $time ),
                                                  ]
                                                } $cron->list_entries();
-    my $msg = '';
+    my $msg = "Job queue\n";
     foreach my $qe ( @entries ) {
         my $job = $cron->check_entry( $qe->{args}->[0] );
         next unless( defined $job ); #??
@@ -330,7 +335,7 @@ sub status {
                          (scalar localtime( $cron->get_next_execution_time( $qe->{time}, 0 ) )),
                          $qe->{args}->[0] ||  '<Unnamed>', # Task name
                        );
-        if( 1 ) {
+        if( $level =~ /^debug$/i ) {
             $msg .= '( ';
             my @uargs = @{$qe->{args}};
             $msg .= join( ', ', @uargs[1..$#uargs] ) . ' )';
@@ -338,6 +343,47 @@ sub status {
         $msg .= "\n";
     }
     $msg .= "End of job queue\n";
+    $msg =~ s/\n/$CR$LF/mgs;
 
     return $msg;
+}
+
+use Cwd 'getcwd';
+sub help {
+    my $wd = getcwd();
+   my $msg = <<"HELP";
+CAUTION: Not production code.  NOT secure.
+Do NOT run from privileged account.
+
+Commands:
+    status
+       Shows queue
+
+    status debug
+       With argument lists
+
+    add name "schedule" A string to be printed when executed
+       Adds a new task on specified schedule
+
+    delete name
+       Deletes a task (by name)
+
+    help
+      This message.
+
+    load file
+        Loads a crontab file from $wd
+        CAUTION, this is with server permissions.  If 
+        the server can read /etc/passwd (or anything else), 
+        it will display it in the error messages.  
+        As I said, NOT production...
+
+    quit
+        Exits.
+
+HELP
+
+   $msg =~ s/\n/$CRLF/gms;
+
+   return $msg;
 }
