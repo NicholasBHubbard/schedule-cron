@@ -1,6 +1,12 @@
 #!/usr/bin/perl
 use Test::More;
 
-eval { require Test::Kwalitee; Test::Kwalitee->import() };
+eval { 
+  require Test::Kwalitee; 
+};
 
-plan( skip_all => 'Test::Kwalitee not installed; skipping' ) if $@;
+if ($@) {
+    plan( skip_all => 'Test::Kwalitee not installed; skipping' ); 
+} else {
+    Test::Kwalitee->import();
+}
