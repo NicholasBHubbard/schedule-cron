@@ -3,6 +3,7 @@
 - Fixed typos in the documentation (#88521)
 - Fixed debug output slipped id (#83462)
 - Fixed crontab with empty lines (#75176)
+- Fixed skipping of jobs triggered at the same time when rescheduling (#70975)
 
 1.01
 

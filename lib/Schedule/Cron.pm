@@ -876,16 +876,18 @@ sub run
                 # We can't return, so throw an exception - perhaps someone will catch.
                 die "No more jobs to run\n";
             }
-            my ($index,$time) = @{shift @{$self->{queue}}};
+            my ($indexes,$time) = $self->_get_next_jobs();
             my $now = time;
             my $sleep = 0;
             if ($time < $now)
             {
                 if ($cfg->{skip})
                 {
-                    $log->(0,"Schedule::Cron - Skipping job $index")
-                      if $log && $loglevel <= 0;
-                    $self->_update_queue($index);
+                    for my $index (@$indexes) {
+                        $log->(0,"Schedule::Cron - Skipping job $index")
+                          if $log && $loglevel <= 0;
+                        $self->_update_queue($index);
+                    }
                     next;
                 }
                 # At least a safety airbag
@@ -919,7 +921,9 @@ sub run
                 $sleep = $time - time;
             }
 
-            $self->_execute($index,$cfg);
+            for my $index (@$indexes) {
+                $self->_execute($index,$cfg);
+            }
             $self->_cleanup_process_list($cfg);
 
             if ($self->{entries_changed}) {
@@ -927,7 +931,9 @@ sub run
                $self->_rebuild_queue;
                delete $self->{entries_changed};
             } else {
-               $self->_update_queue($index);
+                for my $index (@$indexes) {
+                    $self->_update_queue($index);
+                }
             }
         } 
     };
@@ -1171,7 +1177,7 @@ sub _rebuild_queue
 { 
     my $self = shift;
     $self->{queue} = [ ];
-    #  dbg "TT: ",$#{$self->{time_table}};
+    #dbg "TT: ",$#{$self->{time_table}};
     for my $id (0..$#{$self->{time_table}}) 
     {
         $self->_update_queue($id);
@@ -1187,6 +1193,19 @@ sub _deep_copy_entry
     my $copied_entry = { %$entry };
     $copied_entry->{args} = $args;
     return $copied_entry;
+}
+
+# Return an array with an arrayref of entry index and the time which should be
+# executed now
+sub _get_next_jobs {
+    my $self = shift;
+    my ($index,$time) = @{shift @{$self->{queue}}};
+    my $indexes = [ $index ];
+    while (@{$self->{queue}} && $self->{queue}->[0]->[1] == $time) {
+        my $index = @{shift @{$self->{queue}}}[0];
+        push @$indexes,$index;
+    }
+    return $indexes,$time;
 }
 
 # Execute a subroutine whose time has come
@@ -1299,7 +1318,7 @@ sub _update_queue
 
     dbg "Updating Queue: ",scalar(localtime($new_time)) if $DEBUG;
     $self->{queue} = [ sort { $a->[1] <=> $b->[1] } @{$self->{queue}},[$index,$new_time] ];
-    #  dbg "Queue now: ",Dumper($self->{queue});
+    dbg "Queue now: ",Dumper($self->{queue});
 }
 
 
