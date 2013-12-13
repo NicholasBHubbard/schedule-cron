@@ -171,7 +171,7 @@ sub _reaper_all {
         # if there are no finished child processes. Simple 'wait'
         # waits blocking on childs.
         $kid = $HAS_POSIX ? waitpid(-1, WNOHANG) : wait;
-        print "Kid: $kid\n";
+        dbg "Kid: $kid" if $DEBUG;
         if ($kid != 0 && $kid != -1 && defined $STARTEDCHILD{$kid}) 
         {
             # We don't delete the hash entry here to avoid an issue
