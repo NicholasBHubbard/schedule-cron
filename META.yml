@@ -17,10 +17,12 @@ name: Schedule-Cron
 provides:
   Schedule::Cron:
     file: lib/Schedule/Cron.pm
-    version: 1.01
+    version: 1.02_1
 requires:
   Data::Dumper: 0
   Time::ParseDate: 2011.0505
 resources:
+  bugtracker: https://github.com/rhuss/schedule-cron/issues
   license: http://dev.perl.org/licenses/
-version: 1.01
+  repository: git://github.com/rhuss/schedule-cron.git
+version: 1.02_1

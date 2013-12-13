@@ -363,9 +363,11 @@ sub new
     die "Dispatcher not a ref to a subroutine" unless ref($dispatcher) eq "CODE";
     my $cfg = ref($_[0]) eq "HASH" ? $_[0] : {  @_ };
     $cfg->{processprefix} = "Schedule::Cron" unless $cfg->{processprefix};
+    my $timeshift = $cfg->{timeshift} || 0;
     my $self = { 
                 cfg => $cfg,
                 dispatcher => $dispatcher,
+                timeshift => $timeshift,
                 queue => [ ],
                 map => { }
              };
@@ -877,7 +879,7 @@ sub run
                 die "No more jobs to run\n";
             }
             my ($indexes,$time) = $self->_get_next_jobs();
-            my $now = time;
+            my $now = $self->_now();
             my $sleep = 0;
             if ($time < $now)
             {
@@ -918,7 +920,7 @@ sub run
                 } else {
                     sleep($sleep);
                 }
-                $sleep = $time - time;
+                $sleep = $time - $self->_now();
             }
 
             for my $index (@$indexes) {
@@ -1167,6 +1169,33 @@ sub get_next_execution_time
   }
 }
 
+=item $cron->set_timeshift($ts)
+
+Modify global time shift for all timetable. The timeshift is subbed from localtime
+to calculate next execution time for all scheduled jobs.
+
+ts parameter must be in seconds. Default value is 0. Negative values are allowed to
+shift time in the past.
+
+Returns actual timeshift in seconds.
+
+Example:
+
+   $cron->set_timeshift(120);
+
+   Will delay all jobs 2 minutes in the future.
+
+=cut
+
+sub set_timeshift
+{
+    my $self = shift;
+    my $value = shift || 0;
+
+    $self->{timeshift} = $value;
+    return $self->{timeshift};
+}
+
 # ==================================================
 # PRIVATE METHODS:
 # ==================================================
@@ -1307,7 +1336,7 @@ sub _update_queue
     my $new_time = $self->get_next_execution_time($entry->{time});
     # Check, whether next execution time is *smaller* than the current time.
     # This can happen during DST backflip:
-    my $now = time;
+    my $now = $self->_now();
     if ($new_time <= $now) {
         dbg "Adjusting time calculation because of DST back flip (new_time - now = ",$new_time - $now,")" if $DEBUG;
         # We are adding hours as long as our target time is in the future
@@ -1322,6 +1351,12 @@ sub _update_queue
 }
 
 
+# Out "now" which can be shifted if as argument
+sub _now { 
+    my $self = shift;
+    return time + $self->{timeshift};
+}
+
 # The heart of the module.
 # calculate the next concrete date
 # for execution from a crontab entry
@@ -1331,7 +1366,7 @@ sub _calc_time
     my $now = shift;
     my $expanded = shift;
 
-    my $offset = ($expanded->[5] ? 1 : 60);
+    my $offset = ($expanded->[5] ? 1 : 60) + $self->{timeshift};
     my ($now_sec,$now_min,$now_hour,$now_mday,$now_mon,$now_wday,$now_year) = 
       (localtime($now+$offset))[0,1,2,3,4,6,5];
     $now_mon++; 

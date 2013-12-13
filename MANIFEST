@@ -24,4 +24,6 @@ t/sighandler.t
 t/startup.t
 t/test.crontab
 t/delete_entry.t
+t/same_time_with_reschedule.t
+t/timeshift.t
 META.json

@@ -4,6 +4,7 @@
 - Fixed debug output slipped id (#83462)
 - Fixed crontab with empty lines (#75176)
 - Fixed skipping of jobs triggered at the same time when rescheduling (#70975)
+- Added option "timeshift" in order to shift the execution point a bit (#69177)
 
 1.01
 
