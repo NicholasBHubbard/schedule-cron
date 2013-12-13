@@ -2,6 +2,7 @@
 
 - Fixed typos in the documentation (#88521)
 - Fixed debug output slipped id (#83462)
+- Fixed crontab with empty lines (#75176)
 
 1.01
 

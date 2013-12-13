@@ -442,8 +442,7 @@ sub load_crontab
       # Strip off trailing comments and ignore empty 
       # or pure comments lines:
       s/#.*$//;
-      next if /^$/;
-      next if /^$/;
+      next if /^\s*$/;
       next if /^\s*#/;
       chomp;
       s/\s*(.*)\s*$/$1/;
