@@ -127,7 +127,7 @@ my @LOWMAP = (
 # on PIDs it forked on its own, and one which waits on all PIDs (even on those
 # it doesn't forked itself). The later has been proved to work on Win32 with
 # the 64 threads limit (RT #56926), but not when one creates forks on ones
-# one. The specific reaper works for RT #55741.
+# own. The specific reaper works for RT #55741.
 
 # It tend to use the specific one, if it also resolves RT #56926. Both are left
 # here for reference until a decision has been done for 1.01
@@ -1347,7 +1347,7 @@ sub _update_queue
 
     dbg "Updating Queue: ",scalar(localtime($new_time)) if $DEBUG;
     $self->{queue} = [ sort { $a->[1] <=> $b->[1] } @{$self->{queue}},[$index,$new_time] ];
-    dbg "Queue now: ",Dumper($self->{queue});
+    #dbg "Queue now: ",Dumper($self->{queue});
 }
 
 
