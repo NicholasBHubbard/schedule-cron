@@ -13,6 +13,7 @@
   * loglevel: Tuning of logoutput
   * nostatus: Avoid setting $0 to next schedule time
   * sleep: Custom sleep() function between two calls
+- Fixed typos in the documentation (#88521)
   
 1.00
 

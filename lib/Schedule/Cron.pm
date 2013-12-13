@@ -123,7 +123,7 @@ my @LOWMAP = (
              );
 
 
-# Currently, there are two ways for reaping. One, which only waits explicitely
+# Currently, there are two ways for reaping. One, which only waits explicitly
 # on PIDs it forked on its own, and one which waits on all PIDs (even on those
 # it doesn't forked itself). The later has been proved to work on Win32 with
 # the 64 threads limit (RT #56926), but not when one creates forks on ones
@@ -175,7 +175,7 @@ sub _reaper_all {
         if ($kid != 0 && $kid != -1 && defined $STARTEDCHILD{$kid}) 
         {
             # We don't delete the hash entry here to avoid an issue
-            # when modifyinga global hash from multiple threads
+            # when modifying global hash from multiple threads
             $STARTEDCHILD{$kid} = 0;
             dbg "Reaped child $kid" if $DEBUG;
         }
@@ -543,11 +543,11 @@ Examples:
 In addition, ranges or lists of names are allowed. 
 
 An optional sixth column can be used to specify the seconds within the
-minute. If not present, it is implicitely set to "0".
+minute. If not present, it is implicitly set to "0".
 
 B<Command specification>
 
-The subroutine to be executed when the the C<$timespec> matches can be
+The subroutine to be executed when the C<$timespec> matches can be
 specified in several ways.
 
 First, if the optional C<arguments> are lacking, the default dispatching
@@ -680,10 +680,10 @@ The order index of each entry can be used within C<update_entry>, C<get_entry>
 and C<delete_entry>. But be aware, when you are deleting an entry, that you
 have to refetch the list, since the order will have changed.
 
-Note that these entries are returned by value and were opbtained from the
+Note that these entries are returned by value and were obtained from the
 internal list by a deep copy. I.e. you are free to modify it, but this won't
 influence the original entries. Instead use C<update_entry> if you need to
-modify an exisiting crontab entry.
+modify an existing crontab entry.
 
 =cut
 
@@ -761,7 +761,7 @@ sub delete_entry
 
 =item $cron->update_entry($idx,$entry)
 
-Updates the entry with index C<$idx>. C<$entry> is a hash ref as descibed in
+Updates the entry with index C<$idx>. C<$entry> is a hash ref as described in
 C<list_entries()> and must contain at least a value C<$entry-E<gt>{time}>. If no
 C<$entry-E<gt>{dispatcher}> is given, then the default dispatcher is used.  This
 method returns the old entry on success, C<undef> otherwise.
@@ -874,7 +874,7 @@ sub run
             unless (@{$self->{queue}}) # Queue length
             { 
                 # Last job deleted itself, or we were run with no entries.
-                # We can't return, so throw an exception - perhaps somone will catch.
+                # We can't return, so throw an exception - perhaps someone will catch.
                 die "No more jobs to run\n";
             }
             my ($index,$time) = @{shift @{$self->{queue}}};
@@ -1305,7 +1305,7 @@ sub _update_queue
 
 
 # The heart of the module.
-# calulate the next concrete date
+# calculate the next concrete date
 # for execution from a crontab entry
 sub _calc_time 
 { 
@@ -1529,7 +1529,7 @@ sub _calc_time
         }
     }
 
-    # Die with an error because we couldnt find a next execution entry
+    # Die with an error because we couldn't find a next execution entry
     my $dumper = new Data::Dumper($expanded);
     $dumper->Terse(1);
     $dumper->Indent(0);
@@ -1798,7 +1798,7 @@ sub _verify_expanded_cron_entry {
 =head1 DST ISSUES
 
 Daylight saving occurs typically twice a year: In the first switch, one hour is
-skipped. Any job which which triggers in this skipped hour will be fired in the
+skipped. Any job which triggers in this skipped hour will be fired in the
 next hour. So, when the DST switch goes from 2:00 to 3:00 a job which is
 scheduled for 2:43 will be executed at 3:43.
 
@@ -1811,11 +1811,11 @@ would execute a second time. The reason is the way how L<Time::ParseDate>
 calculates epoch times for dates given like C<02:50:00 2009/10/25>. Should it
 return the seconds since 1970 for this time happening 'first', or for this time
 in the extra hour ? As it turns out, L<Time::ParseDate> returns the epoch time
-of the first occurence for C<PST8PDT> and for C<MET> it returns the second
-occurence. Unfortunately, there is no way to specify I<which> entry
+of the first occurrence for C<PST8PDT> and for C<MET> it returns the second
+occurrence. Unfortunately, there is no way to specify I<which> entry
 L<Time::ParseDate> should pick (until now). Of course, after all, this is
 obviously not L<Time::ParseDate>'s fault, since a simple date specification
-within the DST backswitch period B<is> ambigious. However, it would be nice if
+within the DST backswitch period B<is> ambiguous. However, it would be nice if
 the parsing behaviour of L<Time::ParseDate> would be consistent across time
 zones (a ticket has be raised for fixing this). Then L<Schedule::Cron>'s
 behaviour within a DST backward switch would be consistent as well.
