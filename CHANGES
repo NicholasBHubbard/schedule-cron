@@ -1,10 +1,11 @@
-1.02_1
+1.02_2
 
 - Fixed typos in the documentation (#88521)
 - Fixed debug output slipped id (#83462)
 - Fixed crontab with empty lines (#75176)
 - Fixed skipping of jobs triggered at the same time when rescheduling (#70975)
 - Added option "timeshift" in order to shift the execution point a bit (#69177)
+- Made $? local in the reaper sub (#69110 and #69116)
 
 1.01
 

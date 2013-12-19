@@ -79,7 +79,7 @@ BEGIN {
 }
 
 
-$VERSION = "1.02_1";
+$VERSION = "1.02_2";
 
 our $DEBUG = 0;
 my %STARTEDCHILD = ();
@@ -138,7 +138,7 @@ sub REAPER {
 
 # Specific reaper
 sub _reaper_specific {
-    local ($!,%!);
+    local ($!,%!,$?);
     if ($HAS_POSIX)
     {
         foreach my $pid (keys %STARTEDCHILD) {
@@ -163,7 +163,13 @@ sub _reaper_specific {
 
 # Catch all reaper
 sub _reaper_all {
-    local ($!,%!);
+    #local ($!,%!,$?,${^CHILD_ERROR_NATIVE});
+
+    # Localizing ${^CHILD_ERROR_NATIVE} breaks signalhander.t which checks that
+    # chained SIGCHLD handlers are called. I don't know why, though, hence I
+    # leave it out for now. See #69916 for some discussion why this handler
+    # might be needed.
+    local ($!,%!,$?);
     my $kid;
     do 
     {
@@ -860,9 +866,14 @@ sub run
     unless ($cfg->{nofork}) {
         my $old_child_handler = $SIG{'CHLD'};
         $SIG{'CHLD'} = sub {
+            dbg "Calling reaper" if $DEBUG;
             &REAPER();
             if ($old_child_handler && ref $old_child_handler eq 'CODE')
             {
+                dbg "Calling old child handler" if $DEBUG;
+                #use B::Deparse ();
+                #my $deparse = B::Deparse->new;
+                #print 'sub ', $deparse->coderef2text($old_child_handler), "\n";
                 &$old_child_handler();
             }
         };
@@ -879,6 +890,7 @@ sub run
                 die "No more jobs to run\n";
             }
             my ($indexes,$time) = $self->_get_next_jobs();
+            dbg "Jobs for $time : ",join(",",@$indexes) if $DEBUG;
             my $now = $self->_now();
             my $sleep = 0;
             if ($time < $now)
@@ -923,8 +935,11 @@ sub run
                 $sleep = $time - $self->_now();
             }
 
-            for my $index (@$indexes) {
+            for my $index (@$indexes) {                
                 $self->_execute($index,$cfg);
+                # If "skip" is set and the job takes longer than a second, then
+                # the remaining jobs are skipped.
+                last if $cfg->{skip} && $time < $self->_now();
             }
             $self->_cleanup_process_list($cfg);
 
