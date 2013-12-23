@@ -62,6 +62,7 @@ more (like lists and ranges with symbolic names).
 package Schedule::Cron;
 
 use Time::ParseDate;
+use Time::DaysInMonth;
 use Data::Dumper;
 
 use strict;
@@ -353,7 +354,7 @@ e.g.
     vec($rin, fileno(STDIN), 1) = 1;
     my ($nfound, $ttg) = select($rout=$rin, $wout=$win, $eout=$ein, $time);
     if ($nfound) {
-	   handle_io($rout, $wout, $eout);
+      handle_io($rout, $wout, $eout);
     }
     return;
 }
@@ -1211,6 +1212,117 @@ sub set_timeshift
     return $self->{timeshift};
 }
 
+=item $cron->get_previous_execution_time($cron_entry,[$ref_time])
+
+Calculate the previous execution time from a specified crontab entry
+
+Parameters:
+
+=over
+
+=item $cron_entry
+
+The crontab entry as specified in L<"add_entry">
+
+=item $ref_time
+
+The reference time for which the next time should be searched which matches
+C<$cron_entry>. By default, take the current time
+
+=back
+
+This method returns the number of epoch-seconds of the last matched
+date for C<$cron_entry>.
+
+=cut
+
+sub get_previous_execution_time
+{
+  my $self = shift;
+  my $cron_entry = shift;
+  my $time = shift;
+
+  $cron_entry = [ split /\s+/,$cron_entry ] unless ref($cron_entry);
+
+  # Expand and check entry:
+  # =======================
+  die "Exactly 5 or 6 columns has to be specified for a crontab entry ! (not ",
+    scalar(@$cron_entry),")"
+      if ($#$cron_entry != 4 && $#$cron_entry != 5);
+
+  my @expanded;
+  my $w;
+
+  for my $i (0..$#$cron_entry)
+  {
+      my @e = split /,/,$cron_entry->[$i];
+      my @res;
+      my $t;
+      while (defined($t = shift @e)) {
+          # Subst "*/5" -> "0-59/5"
+          $t =~ s|^\*(/.+)$|$RANGES[$i][0]."-".$RANGES[$i][1].$1|e;
+
+          if ($t =~ m|^([^-]+)-([^-/]+)(/(.*))?$|)
+          {
+              my ($low,$high,$step) = ($1,$2,$4);
+              $step = 1 unless $step;
+              if ($low !~ /^(\d+)/)
+              {
+                  $low = $ALPHACONV[$i]{lc $low};
+              }
+              if ($high !~ /^(\d+)/)
+              {
+                  $high = $ALPHACONV[$i]{lc $high};
+              }
+              if (! defined($low) || !defined($high) ||  $low > $high || $step !~ /^\d+$/)
+              {
+                  die "Invalid cronentry '",$cron_entry->[$i],"'";
+              }
+              my $j;
+              for ($j = $low; $j <= $high; $j += $step)
+              {
+                  push @e,$j;
+              }
+          }
+          else
+          {
+              $t = $ALPHACONV[$i]{lc $t} if $t !~ /^(\d+|\*)$/;
+              $t = $LOWMAP[$i]{$t} if exists($LOWMAP[$i]{$t});
+
+              die "Invalid cronentry '",$cron_entry->[$i],"'"
+                if (!defined($t) || ($t ne '*' && ($t < $RANGES[$i][0] || $t > $RANGES[$i][1])));
+              push @res,$t;
+          }
+      }
+      push @expanded, ($#res == 0 && $res[0] eq '*') ? [ "*" ] : [ sort {$a <=> $b} @res];
+  }
+
+  # Check for strange bug
+  $self->_verify_expanded_cron_entry($cron_entry,\@expanded);
+
+  # Calculating time:
+  # =================
+  my $now = $time || time;
+
+  if ($expanded[2]->[0] ne '*' && $expanded[4]->[0] ne '*')
+  {
+      # Special check for which time is lower (Month-day or Week-day spec):
+      my @bak = @{$expanded[4]};
+      $expanded[4] = [ '*' ];
+      my $t1 = $self->_calc_previous_time($now,\@expanded);
+      $expanded[4] = \@bak;
+      $expanded[2] = [ '*' ];
+      my $t2 = $self->_calc_previous_time($now,\@expanded);
+      dbg "MDay : ",scalar(localtime($t1))," -- WDay : ",scalar(localtime($t2)) if $DEBUG;
+      return $t1 > $t2 ? $t1 : $t2;
+  }
+  else
+  {
+      # No conflicts possible:
+      return $self->_calc_previous_time($now,\@expanded);
+  }
+}
+
 # ==================================================
 # PRIVATE METHODS:
 # ==================================================
@@ -1605,6 +1717,250 @@ sub _calc_time
     die "No suitable next execution time found for ",$dumper->Dump(),", now == ",scalar(localtime($now)),"\n";
 }
 
+# Calulate the previous concrete date
+# for execution from a crontab entry
+sub _calc_previous_time
+{
+    my $self = shift;
+    my $now = shift;
+    my $expanded = shift;
+
+    my $offset = $self->{timeshift};
+    my ($now_sec,$now_min,$now_hour,$now_mday,$now_mon,$now_wday,$now_year) =
+      (localtime($now+$offset))[0,1,2,3,4,6,5];
+    $now_mon++;
+    $now_year += 1900;
+
+    # Notes on variables set:
+    # $now_... : the current date, fixed at call time
+    # $dest_...: date used for backtracking. At the end, it contains
+    #            the desired lowest matching date
+
+    my ($dest_mon,$dest_mday,$dest_wday,$dest_hour,$dest_min,$dest_sec,$dest_year) =
+      ($now_mon,$now_mday,$now_wday,$now_hour,$now_min,$now_sec,$now_year);
+
+    # dbg Dumper($expanded);
+
+    my $last_idx = 0;
+    # Airbag...
+    while ($dest_year >= $now_year - 4)
+    {
+        dbg "Parsing $dest_hour:$dest_min:$dest_sec $dest_year/$dest_mon/$dest_mday" if $DEBUG;
+
+        # Check month:
+        if ($expanded->[3]->[0] ne '*')
+        {
+            unless (defined ($dest_mon = $self->_get_previous_nearest($dest_mon,$expanded->[3])))
+            {
+                $last_idx = $#{$expanded -> [3]};
+                $dest_mon = $expanded->[3]->[$last_idx];
+                $dest_year--;
+            }
+        }
+
+        # Check for day of month:
+        if ($expanded->[2]->[0] ne '*')
+        {
+            $last_idx = $#{$expanded -> [2]};
+            if ($dest_mon != $now_mon)
+            {
+                $dest_mday = $expanded->[2]->[$last_idx];
+            }
+            else
+            {
+                unless (defined ($dest_mday = $self->_get_previous_nearest($dest_mday,$expanded->[2])))
+                {
+                    # Last day matched is within the last month. ==> redo it
+                    $dest_mday = $expanded->[2]->[$last_idx];
+                    $dest_mon--;
+                    if ($dest_mon < 1)
+                    {
+                        $dest_mon = 12;
+                        $dest_year--;
+                    }
+                    dbg "Backtrack mday: $dest_mday/$dest_mon/$dest_year" if $DEBUG;
+                    next;
+                }
+            }
+        }
+        else
+        {
+            $dest_mday = ($dest_mon == $now_mon ? $dest_mday : days_in($dest_year, $dest_mon));
+        }
+
+        # Check for day of week:
+        if ($expanded->[4]->[0] ne '*')
+        {
+            $last_idx = $#{$expanded -> [4]};
+            $dest_wday = $self->_get_previous_nearest($dest_wday,$expanded->[4]);
+            $dest_wday = $expanded->[4]->[$last_idx] unless $dest_wday;
+
+            my ($mon,$mday,$year);
+            #      dbg "M: $dest_mon MD: $dest_mday WD: $dest_wday Y:$dest_year";
+            $dest_mday = days_in($dest_year, $dest_mon) if $dest_mon != $now_mon;
+            my $t = parsedate(sprintf("%4.4d/%2.2d/%2.2d",$dest_year,$dest_mon,$dest_mday));
+            ($mon,$mday,$year) =
+              (localtime(parsedate("$WDAYS[$dest_wday]",PREFER_PAST=>1,NOW=>$t+(24*60*60))))[4,3,5];
+            $mon++;
+            $year += 1900;
+
+            dbg "Calculated $mday/$mon/$year for weekday ",$WDAYS[$dest_wday] if $DEBUG;
+            if ($mon != $dest_mon || $year != $dest_year) {
+                dbg "backtracking" if $DEBUG;
+                $dest_mon = $mon;
+                $dest_year = $year;
+                $dest_mday = days_in($dest_year, $dest_mon);
+                $dest_wday = (localtime(parsedate(sprintf("%4.4d/%2.2d/%2.2d",
+                                                          $dest_year,$dest_mon,$dest_mday))))[6];
+                next;
+            }
+
+            $dest_mday = $mday;
+        }
+        else
+        {
+            unless ($dest_mday)
+            {
+                $dest_mday = ($dest_mon == $now_mon ? $dest_mday : days_in($dest_year, $dest_mon));
+            }
+        }
+
+
+        # Check for hour
+        if ($expanded->[1]->[0] ne '*')
+        {
+            $last_idx = $#{$expanded -> [1]};
+            if ($dest_mday != $now_mday || $dest_mon != $now_mon || $dest_year != $now_year)
+            {
+                $dest_hour = $expanded->[1]->[$last_idx];
+            }
+            else
+            {
+                #dbg "Checking for lat hour $dest_hour";
+                unless (defined ($dest_hour = $self->_get_previous_nearest($dest_hour,$expanded->[1])))
+                {
+                    # Hour to match is at the last day ==> redo it
+                    $dest_hour = $expanded->[1]->[$last_idx];
+                    my $t = parsedate(sprintf("%2.2d:%2.2d:%2.2d %4.4d/%2.2d/%2.2d",
+                                              $dest_hour,$dest_min,$dest_sec,$dest_year,$dest_mon,$dest_mday));
+                    ($dest_mday,$dest_mon,$dest_year,$dest_wday) =
+                      (localtime(parsedate(" - 1 day",NOW=>$t)))[3,4,5,6];
+                    $dest_mon++;
+                    $dest_year += 1900;
+                    next;
+                }
+            }
+        }
+        else
+        {
+            $dest_hour = ($dest_mday == $now_mday ? $dest_hour : 23);
+        }
+
+        # Check for minute
+        if ($expanded->[0]->[0] ne '*')
+        {
+            $last_idx = $#{$expanded -> [0]};
+            if ($dest_hour != $now_hour || $dest_mday != $now_mday || $dest_mon != $dest_mon || $dest_year != $now_year)
+            {
+                $dest_min = $expanded->[0]->[$last_idx];
+            }
+            else
+            {
+                unless (defined ($dest_min = $self->_get_previous_nearest($dest_min,$expanded->[0])))
+                {
+                    # Minute to match is at the last hour ==> redo it
+                    $dest_min = $expanded->[0]->[$last_idx];
+                    my $t = parsedate(sprintf("%2.2d:%2.2d:%2.2d %4.4d/%2.2d/%2.2d",
+                                              $dest_hour,$dest_min,$dest_sec,$dest_year,$dest_mon,$dest_mday));
+                    ($dest_hour,$dest_mday,$dest_mon,$dest_year,$dest_wday) =
+                      (localtime(parsedate(" - 1 hour",NOW=>$t)))  [2,3,4,5,6];
+                    $dest_mon++;
+                    $dest_year += 1900;
+                    next;
+                }
+            }
+        }
+        else
+        {
+            if ($dest_hour != $now_hour ||
+                $dest_mday != $now_mday ||
+                $dest_year != $now_year) {
+                $dest_min = 59;
+            }
+        }
+
+        # Check for seconds
+        if ($expanded->[5])
+        {
+            if ($expanded->[5]->[0] ne '*')
+            {
+                $last_idx = $#{$expanded -> [5]};
+                if ($dest_min != $now_min)
+                {
+                    $dest_sec = $expanded->[5]->[$last_idx];
+                }
+                else
+                {
+                    unless (defined ($dest_sec = $self->_get_previous_nearest($dest_sec,$expanded->[5])))
+                    {
+                        # Second to match is at the last minute ==> redo it
+                        $dest_sec = $expanded->[5]->[$last_idx];
+                        my $t = parsedate(sprintf("%2.2d:%2.2d:%2.2d %4.4d/%2.2d/%2.2d",
+                                                  $dest_hour,$dest_min,$dest_sec,
+                                                  $dest_year,$dest_mon,$dest_mday));
+                        ($dest_min,$dest_hour,$dest_mday,$dest_mon,$dest_year,$dest_wday) =
+                          (localtime(parsedate(" - 1 minute",NOW=>$t)))  [1,2,3,4,5,6];
+                        $dest_mon++;
+                        $dest_year += 1900;
+                        next;
+                    }
+                }
+            }
+            else
+            {
+                $dest_sec = ($dest_min == $now_min ? $dest_sec : 59);
+            }
+        }
+        else
+        {
+            $dest_sec = 0;
+        }
+
+        # Check special case of a leap year
+        $dest_year = $self->_check_previous_leap_year($dest_year,$dest_mon,$dest_mday);
+
+        # We did it !!
+        my $date = sprintf("%2.2d:%2.2d:%2.2d %4.4d/%2.2d/%2.2d",
+                           $dest_hour,$dest_min,$dest_sec,$dest_year,$dest_mon,$dest_mday);
+        dbg "Last execution time: $date ",$WDAYS[$dest_wday] if $DEBUG;
+        my $result = parsedate($date, VALIDATE => 1);
+        # Check for a valid date
+        if ($result)
+        {
+            # Valid date... return it!
+            return $result;
+        }
+        else
+        {
+            # Invalid date i.e. (02/30/2008). Retry it with another, possibly
+            # valid date
+            my $t = parsedate($date); # print scalar(localtime($t)),"\n";
+            ($dest_hour,$dest_mday,$dest_mon,$dest_year,$dest_wday) =
+              (localtime(parsedate(" - 1 second",NOW=>$t)))  [2,3,4,5,6];
+            $dest_mon++;
+            $dest_year += 1900;
+            next;
+        }
+    }
+
+    # Die with an error because we couldn't find a last execution entry
+    my $dumper = new Data::Dumper($expanded);
+    $dumper->Terse(1);
+    $dumper->Indent(0);
+
+    die "No suitable previous execution time found for ",$dumper->Dump(),", now == ",scalar(localtime($now)),"\n";
+}
+
 # get next entry in list or 
 # undef if is the highest entry found
 sub _get_nearest 
@@ -1622,6 +1978,53 @@ sub _get_nearest
   return undef;
 }
 
+# get last entry in list or undef if it is the highest entry found
+sub _get_previous_nearest
+{
+   my $self = shift;
+   my $x = shift;
+   my $to_check = shift;
+   my $result = undef;
+   my $val = 0;
+   foreach my $i (0 .. $#$to_check)
+   {
+      $val = $$to_check[$i];
+      if ($val <= $x)
+      {
+         if (defined $result)
+         {
+            if ($val > $result)
+            {
+               $result = $val;
+            }
+         }
+         else
+         {
+            $result = $val;
+         }
+      }
+  }
+  return $result;
+}
+
+# Check the given date value as leap year.
+# return - the previous leap year.
+sub _check_previous_leap_year($$$)
+{
+   my $self = shift;
+   my $year = shift;
+   my $month = shift;
+   my $day = shift;
+
+   if (($month == 2) && ($day == 29))
+   {
+      while (is_leap($year) == 0)
+      {
+         $year--;
+      }
+   }
+   return $year;
+}
 
 # prepare a list of object for pretty printing e.g. in the process list
 sub _format_args {
