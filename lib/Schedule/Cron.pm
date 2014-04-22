@@ -590,6 +590,14 @@ If true, use the evaled string provided with the C<arguments> parameter.  The
 evaluation will take place immediately (not when the subroutine is going to be
 called)
 
+=item nofork
+
+If true then this job will never fork explicitly, independently from the global forking mode
+
+=item fork
+
+If true then this job will always fork explicitly, independently from the global forking mode
+
 =back
 
 Examples:
@@ -611,16 +619,17 @@ sub add_entry
     my $time = shift;
     my $args = shift || []; 
     my $dispatch;
+    my $cfg;
     
     #  dbg "Args: ",Dumper($time,$args);
     
     if (ref($args) eq "HASH") 
     {
-        my $cfg = $args;
+        $cfg = $args;
         $args = undef;
         $dispatch = $cfg->{subroutine} || $cfg->{sub};
         $args = $cfg->{arguments} || $cfg->{args} || [];
-        if ($cfg->{eval} && $cfg) 
+        if ($cfg->{eval} && $cfg) # why is: && $cfg?
         {
             die "You have to provide a simple scalar if using eval" if (ref($args));
             my $orig_args = $args;
@@ -653,7 +662,9 @@ sub add_entry
     {
      time => $time,
      dispatcher => $dispatch,
-     args => $args
+     args => $args,
+     $cfg && $cfg->{nofork} ? (nofork=>1,) : (),# explicite
+     $cfg && $cfg->{fork} ? (nofork=>0,) : (), # explicite
     };
     
     $self->{entries_changed} = 1;
@@ -862,26 +873,11 @@ sub run
     delete $self->{entries_changed};
     die "Nothing in schedule queue" unless @{$self->{queue}};
     
-    # Install reaper now.
-    unless ($cfg->{nofork}) {
-        my $old_child_handler = $SIG{'CHLD'};
-        $SIG{'CHLD'} = sub {
-            dbg "Calling reaper" if $DEBUG;
-            &REAPER();
-            if ($old_child_handler && ref $old_child_handler eq 'CODE')
-            {
-                dbg "Calling old child handler" if $DEBUG;
-                #use B::Deparse ();
-                #my $deparse = B::Deparse->new;
-                #print 'sub ', $deparse->coderef2text($old_child_handler), "\n";
-                &$old_child_handler();
-            }
-        };
-    }
+    # Dont need reaper here
     
     my $mainloop = sub { 
       MAIN:
-        while (42)          
+        while (0xE0) #42         
         {
             unless (@{$self->{queue}}) # Queue length
             { 
@@ -1215,6 +1211,28 @@ sub set_timeshift
 # PRIVATE METHODS:
 # ==================================================
 
+# Install reaper once
+# not need before detach
+sub _sigchld {
+    my $self = shift;
+    return if $self->{_sigchld}++;
+    my $old_child_handler = $SIG{'CHLD'};
+    my $child_handler; $child_handler = sub {
+        dbg "Calling reaper" if $DEBUG;
+        &REAPER();
+        if ($old_child_handler && ref $old_child_handler eq 'CODE')
+        {
+            dbg "Calling old child handler" if $DEBUG;
+            #use B::Deparse ();
+            #my $deparse = B::Deparse->new;
+            #print 'sub ', $deparse->coderef2text($old_child_handler), "\n";
+            &$old_child_handler();
+        }
+        $SIG{'CHLD'} = $child_handler;
+    };
+    $SIG{'CHLD'} = $child_handler;
+}
+
 # Build up executing queue and delete any
 # existing entries
 sub _rebuild_queue 
@@ -1260,6 +1278,8 @@ sub _execute
   my $cfg = shift || $self->{cfg};
   my $entry = $self->get_entry($index) 
     || die "Internal: No entry with index $index found in ",Dumper([$self->list_entries()]);
+  $cfg->{nofork} = 1 if $entry->{nofork};
+  $cfg->{nofork} = 0 if $entry->{fork};
 
   my $pid;
 
@@ -1269,6 +1289,7 @@ sub _execute
 
   unless ($cfg->{nofork})
   {
+      $self->_sigchld();
       if ($pid = fork)
       {
           # Parent
