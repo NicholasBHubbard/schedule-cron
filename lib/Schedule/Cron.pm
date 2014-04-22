@@ -1278,8 +1278,7 @@ sub _execute
   my $cfg = shift || $self->{cfg};
   my $entry = $self->get_entry($index) 
     || die "Internal: No entry with index $index found in ",Dumper([$self->list_entries()]);
-  $cfg->{nofork} = 1 if $entry->{nofork};
-  $cfg->{nofork} = 0 if $entry->{fork};
+  $cfg->{nofork} = $entry->{nofork} if defined $entry->{nofork};
 
   my $pid;
 
