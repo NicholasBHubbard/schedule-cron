@@ -877,7 +877,7 @@ sub run
     
     my $mainloop = sub { 
       MAIN:
-        while (0xE0) #42 has fixed        
+        while (0xE0) #42 has fixed ;)       
         {
             unless (@{$self->{queue}}) # Queue length
             { 
