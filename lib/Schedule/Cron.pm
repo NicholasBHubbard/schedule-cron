@@ -334,6 +334,11 @@ option you can set it to something different. You can e.g. use C<$0> to include
 the original process name.  You can inhibit this with the C<nostatus> option, and
 prevent the argument display by setting C<loglevel> to zero or higher.
 
+=item processname => <name>
+
+Set the process name (i.e. C<$0>) to a literal string. Using this setting 
+overrides C<processprefix> and C<nostatus>.
+
 =item sleep => \&hook
 
 If specified, &hook will be called instead of sleep(), with the time to sleep
@@ -879,6 +884,10 @@ sub run
         };
     }
     
+    if (my $name = $cfg->{processname}) {
+        $0 = $name
+    }
+
     my $mainloop = sub { 
       MAIN:
         while (42)          
@@ -911,7 +920,11 @@ sub run
             {
                 $sleep = $time - $now;
             }
-            $0 = $self->_get_process_prefix()." MainLoop - next: ".scalar(localtime($time)) unless $cfg->{nostatus};
+
+            unless ($cfg->{processname} || $cfg->{nostatus}) {
+                $0 = $self->_get_process_prefix()." MainLoop - next: ".scalar(localtime($time)); 
+            }
+
             if (!$time) {
                 die "Internal: No time found, self: ",$self->{queue},"\n" unless $time;
             }
@@ -1012,7 +1025,10 @@ sub run
             }
             open STDERR, '>&STDOUT' or die "Can't dup stdout: $!";
             
-            $0 = $self->_get_process_prefix()." MainLoop" unless $cfg->{nostatus};
+            unless ($cfg->{processname} || $cfg->{nostatus}) {
+                $0 = $self->_get_process_prefix()." MainLoop"; 
+            }
+
             &$mainloop();
         }
     } 
@@ -1292,10 +1308,10 @@ sub _execute
   }
 
 
-  if ($log && $loglevel <= 0 || !$cfg->{nofork} && !$cfg->{nostatus}) {
+  if ($log && $loglevel <= 0 || !$cfg->{nofork} && !$cfg->{processname} && !$cfg->{nostatus}) {
       my $args_label = (@args && $loglevel <= -1) ? " with (".join(",",$self->_format_args(@args)).")" : "";
       $0 = $self->_get_process_prefix()." Dispatched job $index$args_label"
-        unless $cfg->{nofork} || $cfg->{nostatus};
+        unless $cfg->{nofork} || $cfg->{processname} || $cfg->{nostatus};
       $log->(0,"Schedule::Cron - Starting job $index$args_label")
         if $log && $loglevel <= 0;
   }
