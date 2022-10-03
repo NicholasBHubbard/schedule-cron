@@ -1922,6 +1922,20 @@ modify it under the same terms as Perl itself.
 
 ... roland
 
+=head1 Contributors
+
+=over 4
+
+=item *
+
+Alexandr Ciornii <alexchorny@gmail.com>
+
+=item *
+
+Nicholas Hubbard <nicholashubbard@posteo.net>
+
+=back
+
 =cut
 
 1;
