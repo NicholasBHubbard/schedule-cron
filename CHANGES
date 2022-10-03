@@ -1,3 +1,8 @@
+1.03
+
+- Added option "processname" to set $0 to constant string (#9)
+- Added tests for options "processname", "processprefix", and "nostatus" (#10)
+
 1.02_2
 
 - Fixed typos in the documentation (#88521)
