@@ -1917,7 +1917,7 @@ Roland Huß <roland@consol.de>
 
 Currently maintained by Nicholas Hubbard <nicholashubbard@posteo.net>
 
-=head1 Contributors
+=head1 CONTRIBUTORS
 
 =over 4
 
