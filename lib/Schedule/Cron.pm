@@ -1973,7 +1973,7 @@ Philippe Verdret
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (c) 1999-2013 Roland Huss.
+Copyright (c) 1999-2013 Roland Huß.
 
 Copyright (c) 2022 Nicholas Hubbard.
 
