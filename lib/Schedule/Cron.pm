@@ -1911,16 +1911,11 @@ hero is coming along and will fix this, but this is probably not me ;-)
 
 Sorry for that.
 
-=head1 LICENSE
-
-Copyright 1999-2022 Roland Huss.
-
-This library is free software; you can redistribute it and/or
-modify it under the same terms as Perl itself.
-
-=head1 AUTHOR
+=head1 AUTHORS
 
 Roland Huß <roland@consol.de>
+
+Currently maintained by Nicholas Hubbard <nicholashubbard@posteo.net>
 
 =head1 Contributors
 
@@ -1932,7 +1927,11 @@ Alexandr Ciornii <alexchorny@gmail.com>
 
 =item *
 
-Nicholas Hubbard <nicholashubbard@posteo.net>
+Andrew Danforth
+
+=item *
+
+Andy Ford
 
 =item *
 
@@ -1940,19 +1939,11 @@ Bray Jones
 
 =item *
 
-Peter Vary
+Clinton Gormley
 
 =item *
 
-Philippe Verdret
-
-=item *
-
-Loic Paillotin
-
-=item *
-
-Andrew Danforth
+Eric Wilhelm
 
 =item *
 
@@ -1964,17 +1955,30 @@ Jamie McCarthy
 
 =item *
 
-Andy Ford
+Loic Paillotin
 
 =item *
 
-Eric Wilhelm
+Nicholas Hubbard <nicholashubbard@posteo.net>
 
 =item *
 
-Clinton Gormley
+Peter Vary
+
+=item *
+
+Philippe Verdret
 
 =back
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (c) 1999-2013 Roland Huss.
+
+Copyright (c) 2022 Nicholas Hubbard.
+
+This library is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.
 
 =cut
 
