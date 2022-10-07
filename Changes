@@ -1,10 +1,8 @@
 1.04        UPCOMING
 
 - Merged "CHANGES" and "ChangeLog" into "Changes".
-- Added Roland (the authors) full name and email to the "Author" section of the
-  documentation.
-- Added all contributors named in "ChangeLog" to the "Contributors" section of
-  the documentation.
+- Updated documenation sections: "AUTHORS", "CONTRIBUTORS", and
+  "COPYRIGHT AND LICENSE"
 
 1.03        2022-10-04
 
