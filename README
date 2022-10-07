@@ -151,10 +151,12 @@ Please note also, that the active development for this module has been
 stopped since it is considered  to be feature complete. Bugs and minor
 (external) additions will be added from time to time, though.
 
-LICENSE
--------
+COPYRIGHT AND LICENSE
+---------------------
 
-Copyright 1999-2013 Roland Huss.
+Copyright (c) 1999-2013 Roland Huß.
+
+Copyright (c) 2022 Nicholas Hubbard.
 
 This library is  free software; you can redistribute  it and/or modify
 it under the same terms as Perl itself.
