@@ -1913,14 +1913,14 @@ Sorry for that.
 
 =head1 LICENSE
 
-Copyright 1999-2011 Roland Huss.
+Copyright 1999-2022 Roland Huss.
 
 This library is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
 
 =head1 AUTHOR
 
-... roland
+Roland Huß <roland@consol.de>
 
 =head1 Contributors
 
@@ -1933,6 +1933,46 @@ Alexandr Ciornii <alexchorny@gmail.com>
 =item *
 
 Nicholas Hubbard <nicholashubbard@posteo.net>
+
+=item *
+
+Bray Jones
+
+=item *
+
+Peter Vary
+
+=item *
+
+Philippe Verdret
+
+=item *
+
+Loic Paillotin
+
+=item *
+
+Andrew Danforth
+
+=item *
+
+Frank Mayer
+
+=item *
+
+Jamie McCarthy
+
+=item *
+
+Andy Ford
+
+=item *
+
+Eric Wilhelm
+
+=item *
+
+Clinton Gormley
 
 =back
 
