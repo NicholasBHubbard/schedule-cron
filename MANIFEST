@@ -1,6 +1,5 @@
 Build.PL
-ChangeLog
-CHANGES
+Changes
 examples/simple.pl
 examples/cron.tab
 examples/custom_sleep.pl
