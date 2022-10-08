@@ -99,7 +99,7 @@ refer to the documentation for further reading.
 INSTALLATION
 ------------
 
-Installation can be don either in the old fashioned way
+Installation can be done either in the old fashioned way
 
    perl Makefile.PL
    make
@@ -158,7 +158,7 @@ Copyright (c) 1999-2013 Roland Huß.
 
 Copyright (c) 2022 Nicholas Hubbard.
 
-This library is  free software; you can redistribute  it and/or modify
+This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 Enjoy it...
