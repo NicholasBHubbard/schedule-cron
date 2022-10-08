@@ -79,7 +79,7 @@ BEGIN {
 }
 
 
-$VERSION = "1.03";
+$VERSION = "1.04";
 
 our $DEBUG = 0;
 my %STARTEDCHILD = ();
