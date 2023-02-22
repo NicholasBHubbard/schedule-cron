@@ -1,5 +1,7 @@
 #!/usr/bin/perl -w
 
+=encoding utf8
+
 =head1 NAME
 
 Cron - cron-like scheduler for Perl subroutines
@@ -1975,7 +1977,7 @@ Philippe Verdret
 
 Copyright (c) 1999-2013 Roland Huß.
 
-Copyright (c) 2022 Nicholas Hubbard.
+Copyright (c) 2022-2023 Nicholas Hubbard.
 
 This library is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
@@ -1983,7 +1985,3 @@ modify it under the same terms as Perl itself.
 =cut
 
 1;
-
-
-
-
