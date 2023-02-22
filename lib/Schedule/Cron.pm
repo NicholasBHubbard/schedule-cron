@@ -254,7 +254,7 @@ string)
 Don't fork when starting the scheduler. Instead, the jobs are executed within
 current process. In your executed jobs, you have full access to the global
 variables of your script and hence might influence other jobs running at a
-different time. This behaviour is fundamentally different to the 'fork' mode,
+different time. This behavior is fundamentally different to the 'fork' mode,
 where each jobs gets its own process and hence a B<copy> of the process space,
 independent of each other job and the main process. This is due to the nature
 of the  C<fork> system call. 
@@ -574,7 +574,7 @@ Any additional parameters will be given as arguments to the subroutine to be
 executed.  You can also specify a reference to an array instead of a list of
 parameters.
 
-You can also use a named parameter list provided as an hashref.  The named
+You can also use a named parameter list provided as an hashref. The named
 parameters recognized are:
 
 =over
@@ -692,7 +692,7 @@ refer to the documentation of the method C<add_entry>.
 
 The order index of each entry can be used within C<update_entry>, C<get_entry>
 and C<delete_entry>. But be aware, when you are deleting an entry, that you
-have to refetch the list, since the order will have changed.
+have to re-fetch the list, since the order will have changed.
 
 Note that these entries are returned by value and were obtained from the
 internal list by a deep copy. I.e. you are free to modify it, but this won't
@@ -1359,7 +1359,7 @@ sub _execute
   exit unless $cfg->{nofork};
 }
 
-# Udate the scheduler queue with a new entry
+# Update the scheduler queue with a new entry
 sub _update_queue 
 { 
     my $self = shift;
@@ -1888,8 +1888,8 @@ skipped. Any job which triggers in this skipped hour will be fired in the
 next hour. So, when the DST switch goes from 2:00 to 3:00 a job which is
 scheduled for 2:43 will be executed at 3:43.
 
-For the reverse backwards switch later in the year, the behaviour is
-undefined. Two possible behaviours can occur: For jobs triggered in short
+For the reverse backwards switch later in the year, the behavior is
+undefined. Two possible behaviors can occur: For jobs triggered in short
 intervals, where the next execution time would fire in the extra hour as well,
 the job could be executed again or skipped in this extra hour. Currently,
 running C<Schedule::Cron> in C<MET> would skip the extra job, in C<PST8PDT> it
@@ -1901,14 +1901,14 @@ of the first occurrence for C<PST8PDT> and for C<MET> it returns the second
 occurrence. Unfortunately, there is no way to specify I<which> entry
 L<Time::ParseDate> should pick (until now). Of course, after all, this is
 obviously not L<Time::ParseDate>'s fault, since a simple date specification
-within the DST backswitch period B<is> ambiguous. However, it would be nice if
-the parsing behaviour of L<Time::ParseDate> would be consistent across time
+within the DST back-switch period B<is> ambiguous. However, it would be nice if
+the parsing behavior of L<Time::ParseDate> would be consistent across time
 zones (a ticket has be raised for fixing this). Then L<Schedule::Cron>'s
-behaviour within a DST backward switch would be consistent as well.
+behavior within a DST backward switch would be consistent as well.
 
 Since changing the internal algorithm which worked now for over ten years would
 be too risky and I don't see any simple solution for this right now, it is
-likely that this I<undefined> behaviour will exist for some time. Maybe some
+likely that this I<undefined> behavior will exist for some time. Maybe some
 hero is coming along and will fix this, but this is probably not me ;-)
 
 Sorry for that.
