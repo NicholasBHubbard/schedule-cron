@@ -1166,7 +1166,7 @@ sub get_next_execution_time
           else 
           {
               $t = $ALPHACONV[$i]{lc $t} if $t !~ /^(\d+|\*)$/;
-              $t = $LOWMAP[$i]{$t} if exists($LOWMAP[$i]{$t});
+              $t = $LOWMAP[$i]{$t} if( defined $t && exists($LOWMAP[$i]{$t}) );
               
               die "Invalid cronentry '",$cron_entry->[$i],"'" 
                 if (!defined($t) || ($t ne '*' && ($t < $RANGES[$i][0] || $t > $RANGES[$i][1])));
