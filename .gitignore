@@ -1,0 +1,12 @@
+/.plx/
+/blib/
+/devel/
+/local/
+/Makefile
+/Makefile.old
+/MYMETA.json
+/MYMETA.yml
+/MANIFEST.bak
+/pm_to_blib
+/Schedule-Cron-*/
+/Schedule-Cron-*.tar.gz
