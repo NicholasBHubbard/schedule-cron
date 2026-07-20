@@ -1,4 +1,4 @@
-1.06
+1.06        2026-07-20
 
 - Updated the DST fallback test to use America/Los_Angeles instead of the
   legacy PST8PDT timezone (#12)
